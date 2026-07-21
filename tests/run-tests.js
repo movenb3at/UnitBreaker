@@ -311,6 +311,37 @@ test('제작 가능한 단위가 없으면 힌트를 차감하지 않고 셔플�
   gameUB.Game.state.unlimitedMode = true;
   gameUB.Game.shuffle(false);
   assert(gameUB.Game.state.remainingTime === 100);
+
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/abilities.js'), 'utf8'), harness, { filename: 'js/abilities.js' });
+  const chainGroups = gameUB.Abilities.automaticChainGroups();
+  const automaticSymbols = chainGroups.flatMap((group) => group.units.map((unit) => unit.symbol));
+  assert(['Hz', 'Bq', 'Gy', 'Sv'].every((symbol) => !automaticSymbols.includes(symbol)));
+  const forcePressure = gameUB.Abilities.chooseChainUnit([gameUB.DERIVED_UNITS.N, gameUB.DERIVED_UNITS.Pa], 0.999);
+  const forceNewton = gameUB.Abilities.chooseChainUnit([gameUB.DERIVED_UNITS.N, gameUB.DERIVED_UNITS.Pa], 0);
+  assert(forceNewton.symbol === 'N' && forcePressure.symbol === 'Pa');
+  const resistanceGroup = chainGroups.find((group) => group.units.some((unit) => unit.symbol === 'Ω'));
+  assert(resistanceGroup && resistanceGroup.units.map((unit) => unit.symbol).join(',') === 'Ω,S');
+
+  gameUB.Game.state.boardSize = 5;
+  gameUB.Game.state.board = Array(25).fill(null);
+  const movingA = gameUB.Board.createBaseBlock('A');
+  const movingS = gameUB.Board.createBaseBlock('s');
+  gameUB.Game.state.board[0] = movingA;
+  gameUB.Game.state.board[24] = movingS;
+  const beforeMovement = gameUB.Abilities.captureBasePositions();
+  gameUB.Game.state.board[0] = null;
+  gameUB.Game.state.board[24] = null;
+  gameUB.Game.state.board[6] = movingA;
+  gameUB.Game.state.board[7] = movingS;
+  const movementChain = gameUB.Abilities.findMovementChain(beforeMovement);
+  assert(movementChain && movementChain.group.units.length === 1 && movementChain.group.units[0].symbol === 'C');
+
+  const craftCountBefore = gameUB.Game.state.correctCrafts;
+  const scoreBefore = gameUB.Game.state.score;
+  gameUB.Game.recordCraft(gameUB.DERIVED_UNITS.C, 2);
+  assert(gameUB.Game.state.correctCrafts === craftCountBefore + 1);
+  assert(gameUB.Game.state.score === scoreBefore + 240);
+  assert(gameUB.Game.state.craftedUnits[gameUB.Game.state.craftedUnits.length - 1] === 'C');
 });
 
 if (!process.exitCode) console.log(`\n${passed} tests passed.`);

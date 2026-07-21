@@ -251,7 +251,9 @@
     const banner = document.createElement('div'); banner.className = 'ability-banner';
     banner.innerHTML = '<small>' + (chain > 1 ? chain + ' CHAIN' : 'ABILITY ACTIVE') + '</small><strong>' + symbol + '</strong><span>' + (unit ? unit.nameKo : '') + '</span>';
     refs.boardWrap.appendChild(banner);
-    window.setTimeout(function () { banner.remove(); }, 950);
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const duration = chain > 1 ? 1300 : 950;
+    window.setTimeout(function () { banner.remove(); }, reduceMotion ? Math.min(duration, 100) : duration);
   }
 
   function playTelegraph(index, options, duration) {
@@ -347,6 +349,7 @@
     ['연결 경로 선택', '직전에 고른 블록과 인접한 칸을 이어 선택하세요. 대각선도 연결됩니다.', '① ─ ② ↘ ③'],
     ['분자와 분모', '선택한 재료를 눌러 분자 → 분모 → 미지정 순서로 역할을 바꾸고 차원식을 완성하세요.', 'kg·m  /  s²'],
     ['유도단위 제작', '예를 들어 kg·m·s⁻²을 완성하면 힘의 단위 뉴턴(N)을 제작할 수 있습니다. 뉴턴은 제작 가능한 여러 유도단위 중 하나의 예시입니다.', '예시 · kg·m·s⁻²  →  N'],
+    ['이동 연쇄', '능력으로 움직인 블록이 새로운 유도단위 경로를 만들면 자동 제작되어 연쇄가 이어집니다. N/Pa와 Ω/S는 50:50으로 결정되며 Hz, Bq, Gy, Sv는 자동 연쇄에서 제외됩니다.', 'MOVE  →  AUTO UNIT  →  CHAIN'],
     ['무제한 모드', '메인 메뉴에서 무제한 모드를 켜면 시간 제한과 셔플 시간 페널티 없이 플레이합니다. 보드 크기와 힌트 수는 선택한 난이도를 그대로 따릅니다.', '∞  ·  셔플 무료'],
     ['반응 폭탄', '현재 목록에서 서로 다른 특수 단위를 3종, 5종, 9종… 제작할 때마다 반응 폭탄을 획득합니다. 폭탄을 획득하면 목록이 초기화되어 이전 단위도 다음 단계에서 다시 세어집니다. 같은 단계 안의 중복은 한 번만 세며, 가장자리를 제외한 강조 칸을 중심으로 고르면 3×3 영역이 폭발합니다.', '3종  →  ✦  →  3×3'],
     ['실험 목표', '유도단위 능력과 반응 폭탄으로 선택한 난이도의 모든 기본단위 블록을 제거하면 승리합니다.', 'ALL BLOCKS  →  0']

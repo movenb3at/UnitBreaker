@@ -200,11 +200,7 @@
       const special = UB.Board.createSpecialBlock(unit);
       selected.forEach(function (cell) { current.board[cell] = null; });
       current.board[index] = special;
-      current.removedBlocks += selected.length;
-      current.correctCrafts += 1;
-      current.craftedUnits.push(unit.symbol);
-      this.recordBonusUnit(unit.symbol);
-      current.score += selected.length * 120;
+      this.recordCraft(unit, selected.length);
       current.selectedCells = [];
       current.assignments = {};
       current.placementCandidates = [];
@@ -241,6 +237,16 @@
         UB.UI.renderBoard();
       }
       UB.UI.updateStatus();
+    },
+
+    recordCraft: function (unit, materialCount) {
+      const current = this.state;
+      const count = Math.max(0, Number(materialCount) || 0);
+      current.removedBlocks += count;
+      current.correctCrafts += 1;
+      current.craftedUnits.push(unit.symbol);
+      current.score += count * 120;
+      return this.recordBonusUnit(unit.symbol);
     },
 
     recordBonusUnit: function (symbol) {

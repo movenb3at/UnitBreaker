@@ -94,12 +94,21 @@
       if (action === 'gravity') await UB.Abilities.settle();
       if (action === 'shuffle') UB.Game.shuffle(true);
       if (action === 'chain') {
-        const joule = UB.DERIVED_UNITS.J; const watt = UB.DERIVED_UNITS.W;
-        const center = Math.floor(state.board.length / 2);
-        state.board[center] = UB.Board.createSpecialBlock(joule);
-        state.board[Math.min(center + 1, state.board.length - 1)] = UB.Board.createSpecialBlock(watt);
+        const joule = UB.DERIVED_UNITS.J;
+        const size = state.boardSize;
+        const specialIndex = UB.Board.toIndex(Math.floor(size / 2), 0, size);
+        const materialColumns = [size - 4, size - 3, size - 2, size - 1];
+        const materialRows = [0, Math.floor((size - 1) / 3), Math.ceil((size - 1) * 2 / 3), size - 1];
+        const materialUnits = ['kg', 'm', 's', 's'];
+        state.board = Array(size * size).fill(null);
+        materialUnits.forEach(function (symbol, order) {
+          state.board[UB.Board.toIndex(materialRows[order], materialColumns[order], size)] = UB.Board.createBaseBlock(symbol);
+        });
+        const special = UB.Board.createSpecialBlock(joule);
+        state.board[specialIndex] = special;
         state.status = 'animating'; state.isAnimating = true; UB.UI.renderAll();
-        await UB.Abilities.activateSpecial(state.board[center].id, 1, new Set());
+        UB.Game.recordCraft(joule, 5);
+        await UB.Abilities.activateSpecial(special.id, 1, new Set());
         state.status = 'playing'; state.isAnimating = false;
       }
       if (action === 'win') UB.Game.win();
