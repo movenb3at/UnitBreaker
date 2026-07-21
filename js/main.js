@@ -10,7 +10,7 @@
     document.querySelector('#start-button').addEventListener('click', function () {
       UB.Audio.unlock(); UB.Game.initialize(selectedDifficulty(), document.querySelector('#unlimited-mode').checked);
     });
-    document.querySelectorAll('[data-open="tutorial"]').forEach(function (button) { button.addEventListener('click', function () { UB.UI.showTutorial(0); }); });
+    document.querySelectorAll('[data-open="tutorial"]').forEach(function (button) { button.addEventListener('click', function () { UB.Tutorial.start(); }); });
     document.querySelectorAll('[data-open="codex"]').forEach(function (button) { button.addEventListener('click', UB.UI.showCodex); });
     document.querySelector('#codex-button').addEventListener('click', UB.UI.showCodex);
     document.querySelector('#keyboard-help-button').addEventListener('click', UB.UI.showKeyboardHelp);
@@ -119,6 +119,6 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     UB.UI.cache(); bindEvents(); setupDebug(); UB.UI.showMenu();
-    if (!localStorage.getItem('unitBreakerTutorialSeen')) window.setTimeout(function () { UB.UI.showTutorial(0); }, 450);
+    if (!localStorage.getItem('unitBreakerTutorialSeen')) window.setTimeout(function () { UB.Tutorial.offer(); }, 450);
   });
 })(window.UnitBreaker = window.UnitBreaker || {});

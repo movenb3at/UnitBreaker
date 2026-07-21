@@ -206,18 +206,39 @@ test('특수 능력 충전·방향 이동 애니메이션이 실행 흐름에 �
   assert(css.includes('@keyframes pushUp') && css.includes('@keyframes telegraphRing') && css.includes('@keyframes chargeAttract'));
 });
 
-test('튜토리얼은 무제한 모드와 반응 폭탄을 독립 슬라이드로 안내한다', () => {
+test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 보기를 제공한다', () => {
+  const tutorial = fs.readFileSync(path.join(root, 'js/tutorial.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  assert(ui.includes("['무제한 모드'"));
-  assert(ui.includes("['반응 폭탄'"));
-  assert(ui.includes("' / ' + TUTORIAL_STEPS.length"));
-  assert(ui.includes('step >= TUTORIAL_STEPS.length - 1'));
-  assert(ui.includes("outgoing.classList.add('is-leaving')"));
-  assert(ui.includes("incoming.classList.add('is-entering')"));
-  assert(ui.includes('data-tutorial="prev"'));
-  assert(ui.includes('step -= 1'));
-  assert(css.includes('.tutorial-slide.is-leaving') && css.includes('.tutorial-slide.is-entering'));
+  assert((tutorial.match(/chapter: '/g) || []).length === 34);
+  assert(!tutorial.includes('restartChapter') && !tutorial.includes('CHAPTER_STARTS'));
+  assert(tutorial.includes('reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex }'));
+  assert(tutorial.includes('stepIndex -= 1; actionIndex = 0; reviewing = true'));
+  assert(tutorial.includes("title: '무제한 모드 켜기'") && tutorial.includes("title: '반응 폭탄'"));
+  assert(tutorial.includes("title: '무제한 상태 유지'") && !tutorial.includes("title: '무제한 모드 끄기'"));
+  assert(tutorial.includes("classList.toggle('tutorial-in-game'") && css.includes('.tutorial-in-game .tutorial-coach'));
+  assert((tutorial.match(/codexScrollAction\(\)/g) || []).length === 3);
+  assert(tutorial.includes("document.addEventListener('scroll', handleGuidedScroll, true)"));
+  assert(tutorial.includes("event.target.closest('[data-close]')"));
+  assert(tutorial.includes("refs.coach.classList.add('is-collapsed', 'is-codex-reading')"));
+  assert(tutorial.includes('UB.UI.closeInformationalModal()'));
+  assert(tutorial.includes('codexOpen ? 0 : actionIndex'));
+  assert(tutorial.includes('더 살펴봐도 좋습니다. 준비되면 ×를 눌러'));
+  assert(ui.includes('closeInformationalModal: closeInformationalModal'));
+  assert(tutorial.includes("querySelector('#home-button').disabled = true"));
+  assert(tutorial.includes("querySelector('#home-button').disabled = false"));
+  assert(css.includes('.tutorial-coach.is-collapsed'));
+  assert(tutorial.includes("classList.contains('is-codex-reading')"));
+  assert(tutorial.includes("setProperty('width', safeWidth + 'px', 'important')"));
+  assert(css.includes('.tutorial-in-game .tutorial-coach.is-codex-reading'));
+  assert(tutorial.includes("input[name=\"difficulty\"][value=\"easy\"]').closest('label')"));
+  assert(tutorial.includes("action('#hint-button'") && tutorial.includes("action('#shuffle-button'") && tutorial.includes("action('#bonus-item-button'"));
+  assert(tutorial.includes("data-choice=\"Hz\"") && tutorial.includes("data-choice=\"Bq\""));
+  assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
+  assert(!tutorial.includes('#debug-panel') && !ui.includes('TUTORIAL_STEPS'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial12"'));
+  assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });
 
 test('모바일 유도단위 도감은 한 열과 부가 설명 토글을 사용한다', () => {

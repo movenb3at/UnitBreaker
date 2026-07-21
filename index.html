@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07111d">
   <meta name="description" content="SI 기본단위를 조합해 유도단위를 만들고 보드를 정리하는 실시간 과학 퍼즐 게임">
   <title>Unit Breaker — SI 단위 조합 퍼즐</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260722-tutorial12">
 </head>
 <body>
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -136,6 +136,24 @@
     </section>
   </main>
 
+  <div id="tutorial-guide" class="tutorial-guide" hidden aria-live="polite">
+    <div class="tutorial-shield tutorial-shield-top" data-tutorial-shield></div>
+    <div class="tutorial-shield tutorial-shield-right" data-tutorial-shield></div>
+    <div class="tutorial-shield tutorial-shield-bottom" data-tutorial-shield></div>
+    <div class="tutorial-shield tutorial-shield-left" data-tutorial-shield></div>
+    <div class="tutorial-spotlight" aria-hidden="true"></div>
+    <section class="tutorial-coach" role="dialog" aria-modal="false" aria-labelledby="tutorial-title">
+      <div class="tutorial-progress"><span id="tutorial-chapter"></span><b id="tutorial-step-count"></b></div>
+      <h2 id="tutorial-title"></h2>
+      <p id="tutorial-body"></p>
+      <p id="tutorial-task"></p>
+      <div class="tutorial-coach-actions">
+        <button type="button" data-tutorial-control="back">이전</button>
+        <button type="button" data-tutorial-control="skip">건너뛰기</button>
+        <button class="primary-button" type="button" data-tutorial-control="next">다음</button>
+      </div>
+    </section>
+  </div>
   <div id="modal-root" class="modal-root" aria-live="polite"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="countdown-flash" class="countdown-flash" aria-hidden="true"></div>
@@ -145,8 +163,9 @@
   <script src="js/audio.js"></script>
   <script src="js/board.js"></script>
   <script src="js/abilities.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/game.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/ui.js?v=20260722-tutorial12"></script>
+  <script src="js/game.js?v=20260722-tutorial12"></script>
+  <script src="js/tutorial.js?v=20260722-tutorial12"></script>
+  <script src="js/main.js?v=20260722-tutorial12"></script>
 </body>
 </html>

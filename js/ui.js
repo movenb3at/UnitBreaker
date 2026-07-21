@@ -344,79 +344,6 @@
     refs.modalRoot.querySelector('[data-close]').addEventListener('click', closeInformationalModal);
   }
 
-  const TUTORIAL_STEPS = [
-    ['기본단위 블록', 'kg, m, s, A, K, mol, cd의 7가지 SI 기본단위가 보드를 구성합니다.', 'kg  m  s  A  K  mol  cd'],
-    ['연결 경로 선택', '직전에 고른 블록과 인접한 칸을 이어 선택하세요. 대각선도 연결됩니다.', '① ─ ② ↘ ③'],
-    ['분자와 분모', '선택한 재료를 눌러 분자 → 분모 → 미지정 순서로 역할을 바꾸고 차원식을 완성하세요.', 'kg·m  /  s²'],
-    ['유도단위 제작', '예를 들어 kg·m·s⁻²을 완성하면 힘의 단위 뉴턴(N)을 제작할 수 있습니다. 뉴턴은 제작 가능한 여러 유도단위 중 하나의 예시입니다.', '예시 · kg·m·s⁻²  →  N'],
-    ['이동 연쇄', '능력으로 움직인 블록이 새로운 유도단위 경로를 만들면 자동 제작되어 연쇄가 이어집니다. N/Pa와 Ω/S는 50:50으로 결정되며 Hz, Bq, Gy, Sv는 자동 연쇄에서 제외됩니다.', 'MOVE  →  AUTO UNIT  →  CHAIN'],
-    ['무제한 모드', '메인 메뉴에서 무제한 모드를 켜면 시간 제한과 셔플 시간 페널티 없이 플레이합니다. 보드 크기와 힌트 수는 선택한 난이도를 그대로 따릅니다.', '∞  ·  셔플 무료'],
-    ['반응 폭탄', '현재 목록에서 서로 다른 특수 단위를 3종, 5종, 9종… 제작할 때마다 반응 폭탄을 획득합니다. 폭탄을 획득하면 목록이 초기화되어 이전 단위도 다음 단계에서 다시 세어집니다. 같은 단계 안의 중복은 한 번만 세며, 가장자리를 제외한 강조 칸을 중심으로 고르면 3×3 영역이 폭발합니다.', '3종  →  ✦  →  3×3'],
-    ['실험 목표', '유도단위 능력과 반응 폭탄으로 선택한 난이도의 모든 기본단위 블록을 제거하면 승리합니다.', 'ALL BLOCKS  →  0']
-  ];
-
-  function tutorialContent(step) {
-    const data = TUTORIAL_STEPS[step] || TUTORIAL_STEPS[0];
-    const lastStep = TUTORIAL_STEPS.length - 1;
-    return '<div class="tutorial-slide"><p class="eyebrow">TUTORIAL · ' + (step + 1) + ' / ' + TUTORIAL_STEPS.length + '</p><div class="tutorial-visual"><span>' + data[2] + '</span></div><h2>' + data[0] + '</h2><p>' + data[1] + '</p><div class="tutorial-dots">' + TUTORIAL_STEPS.map(function (_, i) { return '<i class="' + (i === step ? 'active' : '') + '"></i>'; }).join('') + '</div><div class="tutorial-actions"><button type="button" data-tutorial="prev"' + (step === 0 ? ' disabled' : '') + '>← 이전</button><button type="button" data-tutorial="skip">닫기</button><button class="primary-button" type="button" data-tutorial="next">' + (step === lastStep ? '실험실로' : '다음') + ' →</button></div></div>';
-  }
-
-  function showTutorial(startStep) {
-    const pausable = ['playing', 'placing', 'placingItem'].indexOf(UB.Game.state.status) >= 0;
-    modalResumeState = pausable ? UB.Game.state.status : null;
-    if (pausable) { UB.Game.state.isPaused = true; UB.Game.setStatus('paused'); }
-    let step = startStep || 0;
-    let transitionTimer = null;
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    function finishTutorial() {
-      window.clearTimeout(transitionTimer);
-      localStorage.setItem('unitBreakerTutorialSeen', '1');
-      closeInformationalModal();
-    }
-
-    function bindTutorialActions(card) {
-      card.querySelector('[data-tutorial="skip"]').addEventListener('click', finishTutorial);
-      card.querySelector('[data-tutorial="prev"]').addEventListener('click', function (event) {
-        if (step <= 0) return;
-        event.currentTarget.disabled = true;
-        step -= 1;
-        render(true);
-      });
-      card.querySelector('[data-tutorial="next"]').addEventListener('click', function (event) {
-        if (step >= TUTORIAL_STEPS.length - 1) { finishTutorial(); return; }
-        event.currentTarget.disabled = true;
-        step += 1;
-        render(true);
-      });
-    }
-
-    function replaceSlide(card) {
-      card.innerHTML = tutorialContent(step);
-      const incoming = card.querySelector('.tutorial-slide');
-      bindTutorialActions(card);
-      if (reduceMotion) return;
-      incoming.classList.add('is-entering');
-      void incoming.offsetWidth;
-      window.requestAnimationFrame(function () { incoming.classList.remove('is-entering'); });
-    }
-
-    function render(animate) {
-      const card = refs.modalRoot.querySelector('.tutorial-modal');
-      if (!card) {
-        openModal(tutorialContent(step), { className: 'tutorial-modal', label: '게임 튜토리얼' });
-        bindTutorialActions(refs.modalRoot.querySelector('.tutorial-modal'));
-        return;
-      }
-      const outgoing = card.querySelector('.tutorial-slide');
-      if (!animate || reduceMotion || !outgoing) { replaceSlide(card); return; }
-      outgoing.classList.add('is-leaving');
-      window.clearTimeout(transitionTimer);
-      transitionTimer = window.setTimeout(function () { replaceSlide(card); }, 200);
-    }
-    render(false);
-  }
-
   function closeInformationalModal() {
     closeModal();
     if (modalResumeState) { UB.Game.state.isPaused = false; UB.Game.setStatus(modalResumeState); }
@@ -455,7 +382,7 @@
     focusBoardCell: focusBoardCell, renderAll: renderAll, renderBoard: renderBoard, renderComposer: renderComposer,
     playTelegraph: playTelegraph, requestChoice: requestChoice, setShuffleAvailable: setShuffleAvailable, setTargeting: setTargeting,
     showAbilityBanner: showAbilityBanner, showCodex: showCodex, showGame: showGame, showMenu: showMenu,
-    showKeyboardHelp: showKeyboardHelp, showPause: showPause, showResult: showResult, showTutorial: showTutorial, syncGameState: syncGameState,
+    closeInformationalModal: closeInformationalModal, showKeyboardHelp: showKeyboardHelp, showPause: showPause, showResult: showResult, syncGameState: syncGameState,
     toast: toast, updateStatus: updateStatus
   };
 })(window.UnitBreaker = window.UnitBreaker || {});

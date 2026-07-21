@@ -15,7 +15,7 @@
       pushMotion: [], pushDirection: null, rotationMotion: [], gravityMovements: [], attractMovements: [],
       bonusItems: 0, bonusMilestone: 0, bonusUnitTypes: [], nextBonusThreshold: UB.bonusItemThreshold(1), itemTargeting: false,
       gravityPulse: 0, abilityPulse: 0, lastAbility: null, focusedIndex: 90,
-      startedAt: null, initialSeconds: 480
+      startedAt: null, initialSeconds: 480, tutorialMode: false
     };
   }
 
@@ -49,9 +49,29 @@
       window.setTimeout(function () { UB.UI.focusBoardCell(Game.state.focusedIndex); }, 80);
     },
 
+    startTutorialSession: function (board) {
+      window.clearInterval(timerHandle);
+      this.state = blankState();
+      this.state.difficulty = 'easy';
+      this.state.tutorialMode = true;
+      this.state.unlimitedMode = true;
+      this.state.boardSize = 5;
+      this.state.initialBlockCount = 25;
+      this.state.hintsRemaining = 7;
+      this.state.remainingTime = 600;
+      this.state.initialSeconds = 600;
+      this.state.focusedIndex = 20;
+      this.state.board = (board || []).slice();
+      while (this.state.board.length < 25) this.state.board.push(null);
+      this.state.startedAt = Date.now();
+      this.setStatus('playing');
+      UB.UI.showGame();
+      UB.UI.renderAll();
+    },
+
     startTimer: function () {
       window.clearInterval(timerHandle);
-      if (this.state.unlimitedMode) return;
+      if (this.state.unlimitedMode || this.state.tutorialMode) return;
       timerHandle = window.setInterval(function () {
         const current = Game.state;
         if (current.status === 'menu' || current.status === 'won' || current.status === 'lost' || current.isPaused || current.remainingTime <= 0) return;
