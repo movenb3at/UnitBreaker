@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111d">
+  <meta name="description" content="SI 기본단위를 조합해 유도단위를 만들고 보드를 정리하는 실시간 과학 퍼즐 게임">
+  <title>Unit Breaker — SI 단위 조합 퍼즐</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <main id="app">
+    <section id="menu-screen" class="screen menu-screen active" aria-labelledby="game-title">
+      <div class="menu-shell">
+        <div class="brand-mark" aria-hidden="true"><span>kg</span><i>×</i><span>m</span><i>÷</i><span>s²</span></div>
+        <p class="eyebrow">SI DIMENSION LAB · PUZZLE 01</p>
+        <h1 id="game-title">UNIT<br><span>BREAKER</span></h1>
+        <p class="menu-copy">SI 기본단위를 조합해 유도단위를 제작하세요. 난이도와 시간 제한 여부를 고르고, 완성된 단위의 물리적 능력으로 보드를 정리하세요.</p>
+
+        <fieldset class="difficulty-picker">
+          <legend>실험 난이도</legend>
+          <label><input type="radio" name="difficulty" value="easy"><span><b>쉬움</b><small>5×5 · 힌트 7</small></span></label>
+          <label><input type="radio" name="difficulty" value="normal" checked><span><b>보통</b><small>10×10 · 힌트 5</small></span></label>
+          <label><input type="radio" name="difficulty" value="hard"><span><b>어려움</b><small>15×15 · 힌트 3</small></span></label>
+        </fieldset>
+
+        <label class="unlimited-toggle" for="unlimited-mode">
+          <input id="unlimited-mode" type="checkbox">
+          <span class="toggle-track" aria-hidden="true"><i></i></span>
+          <span class="toggle-copy"><b>무제한 모드</b><small>시간 제한과 셔플 페널티 없이 플레이</small></span>
+        </label>
+
+        <button id="start-button" class="primary-button start-button" type="button"><span>실험 시작</span><b aria-hidden="true">→</b></button>
+        <div class="menu-actions">
+          <button type="button" data-open="tutorial">튜토리얼</button>
+          <button type="button" data-open="codex">단위 도감</button>
+        </div>
+        <p class="science-note">특수 능력은 SI 단위의 물리적 의미를 퍼즐 규칙으로 재해석한 게임적 표현입니다.</p>
+      </div>
+      <aside class="menu-visual" aria-hidden="true">
+        <div class="orbital orbital-one"></div>
+        <div class="orbital orbital-two"></div>
+        <div class="formula-cloud">
+          <span class="formula f1">kg·m·s⁻²</span><span class="unit-symbol u1">N</span>
+          <span class="formula f2">kg·m²·s⁻³</span><span class="unit-symbol u2">W</span>
+          <span class="formula f3">A·s</span><span class="unit-symbol u3">C</span>
+          <span class="formula f4">cd·m⁻²</span><span class="unit-symbol u4">lx</span>
+        </div>
+      </aside>
+    </section>
+
+    <section id="game-screen" class="screen game-screen" aria-label="Unit Breaker 게임">
+      <header class="topbar">
+        <button id="home-button" class="compact-brand" type="button" aria-label="타이틀 화면으로 이동"><span>UNIT</span> BREAKER <small>SI LAB</small></button>
+        <div class="status-cluster">
+          <div id="timer-card" class="status-card timer-card"><small id="timer-label">남은 시간</small><strong id="timer" aria-live="polite">08:00</strong></div>
+          <div class="status-card"><small>남은 블록</small><strong><span id="remaining-count">100</span><em>/ <span id="initial-count">100</span></em></strong></div>
+          <div class="status-card"><small>점수</small><strong id="score">0</strong></div>
+          <div class="status-card chain-card"><small>최고 연쇄</small><strong><span id="max-chain">0</span><em> CHAIN</em></strong></div>
+        </div>
+        <div class="top-actions">
+          <button id="codex-button" class="icon-button" type="button" aria-label="단위 도감 열기">▦</button>
+          <button id="keyboard-help-button" class="icon-button" type="button" aria-label="키보드 조작법 열기">⌨</button>
+          <button id="sound-button" class="icon-button" type="button" aria-label="음향 끄기" aria-pressed="false">♪</button>
+          <button id="pause-button" class="icon-button" type="button" aria-label="일시정지">Ⅱ</button>
+        </div>
+      </header>
+
+      <div class="game-layout">
+        <section class="board-panel" aria-labelledby="board-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LIVE SPECIMEN GRID</p><h2 id="board-title">기본단위 보드</h2></div>
+            <div class="board-tools">
+              <button id="bonus-item-button" class="bonus-item-button" type="button" disabled>✦ 반응 폭탄 <b id="bonus-item-count">0</b><small id="bonus-progress">0 / 3</small></button>
+              <button id="hint-button" type="button">힌트 <b id="hint-count">5</b></button>
+              <button id="shuffle-button" type="button" disabled>셔플 <small id="shuffle-cost">−10s</small></button>
+            </div>
+          </div>
+          <div id="board-wrap" class="board-wrap">
+            <div id="board" class="board" role="grid" aria-rowcount="10" aria-colcount="10" aria-label="10 곱하기 10 SI 기본단위 보드"></div>
+            <svg id="path-layer" class="path-layer" aria-hidden="true"></svg>
+            <div id="ability-overlay" class="ability-overlay" aria-hidden="true"></div>
+          </div>
+          <div class="unit-legend" aria-label="기본단위 범례">
+            <span data-unit="kg"><i></i>kg <small>질량</small></span><span data-unit="m"><i></i>m <small>길이</small></span>
+            <span data-unit="s"><i></i>s <small>시간</small></span><span data-unit="A"><i></i>A <small>전류</small></span>
+            <span data-unit="K"><i></i>K <small>온도</small></span><span data-unit="mol"><i></i>mol <small>물질량</small></span>
+            <span data-unit="cd"><i></i>cd <small>광도</small></span>
+          </div>
+        </section>
+
+        <aside class="composer" aria-labelledby="composer-title">
+          <div class="composer-head"><div><p class="eyebrow">DIMENSION SYNTHESIZER</p><h2 id="composer-title">단위 조합기</h2></div><span id="selection-count">0 선택</span></div>
+
+          <section class="composer-section materials-section">
+            <div class="section-label"><h3>선택한 재료</h3><small>클릭하여 역할 지정</small></div>
+            <div id="material-list" class="material-list empty-state"><span>보드에서 연결된 블록을 선택하세요</span></div>
+          </section>
+
+          <div class="fraction-builder">
+            <section class="formula-zone numerator-zone"><span>분자 · 곱하기</span><div id="numerator-display">—</div></section>
+            <div class="fraction-line"></div>
+            <section class="formula-zone denominator-zone"><span>분모 · 나누기</span><div id="denominator-display">—</div></section>
+          </div>
+
+          <section class="dimension-readout">
+            <small>현재 차원식</small><strong id="dimension-expression">1</strong><code id="dimension-vector">[0, 0, 0, 0, 0, 0, 0]</code>
+          </section>
+
+          <section id="result-preview" class="result-preview is-empty" aria-live="polite">
+            <div class="result-symbol" id="result-symbol">?</div>
+            <div><small id="result-quantity">예상 결과</small><h3 id="result-name">재료의 역할을 지정하세요</h3><p id="result-description">선택한 재료를 눌러 분자와 분모에 배치하면 차원식이 계산됩니다.</p></div>
+          </section>
+
+          <div class="composer-actions">
+            <button id="reset-selection" class="secondary-button" type="button">초기화 <kbd>R</kbd></button>
+            <button id="craft-button" class="primary-button" type="button" disabled>제작 <span>→</span></button>
+          </div>
+          <p id="composer-help" class="composer-help">8방향으로 인접한 블록을 이어 선택하세요.</p>
+        </aside>
+      </div>
+
+      <section id="debug-panel" class="debug-panel" hidden aria-label="개발자 디버그 패널">
+        <strong>DEBUG</strong>
+        <label>시간 <input id="debug-time" type="number" min="0" max="999" value="30"><button data-debug="time">적용</button></label>
+        <label>블록 <select id="debug-unit"><option>kg</option><option>m</option><option>s</option><option>A</option><option>K</option><option>mol</option><option>cd</option></select><button data-debug="add">빈칸 생성</button></label>
+        <label>특수 <select id="debug-special"></select><button data-debug="special">즉시 배치</button></label>
+        <button data-debug="reset">보드 초기화</button><button data-debug="clear">전부 제거</button>
+        <button data-debug="gravity">중력</button><button data-debug="shuffle">셔플</button>
+        <button data-debug="chain">연쇄 반응</button>
+        <button data-debug="win">승리</button><button data-debug="lose">패배</button>
+      </section>
+    </section>
+  </main>
+
+  <div id="modal-root" class="modal-root" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="countdown-flash" class="countdown-flash" aria-hidden="true"></div>
+
+  <script src="js/data/units.js"></script>
+  <script src="js/unit-system.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/abilities.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
