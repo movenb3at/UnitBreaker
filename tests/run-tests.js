@@ -198,7 +198,8 @@ test('특수 능력 충전·방향 이동 애니메이션이 실행 흐름에 �
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert(abilities.includes("kind: 'charge'"));
-  assert(abilities.includes('line.filter(function (cell) { return Boolean(blockAt(cell)); })'));
+  assert(abilities.includes('function planPushLine'));
+  assert(abilities.includes('plan.movements.map(function (movement) { return movement.from; })'));
   assert(abilities.includes('state().attractMovements = movements'));
   assert(ui.includes('function playTelegraph'));
   assert(ui.includes("cell.classList.add('is-attracting')"));
@@ -321,6 +322,19 @@ test('제작 가능한 단위가 없으면 힌트를 차감하지 않고 셔플�
   assert(forceNewton.symbol === 'N' && forcePressure.symbol === 'Pa');
   const resistanceGroup = chainGroups.find((group) => group.units.some((unit) => unit.symbol === 'Ω'));
   assert(resistanceGroup && resistanceGroup.units.map((unit) => unit.symbol).join(',') === 'Ω,S');
+
+  gameUB.Game.state.boardSize = 10;
+  gameUB.Game.state.board = Array(100).fill(null);
+  for (let col = 1; col <= 8; col += 1) {
+    gameUB.Game.state.board[40 + col] = gameUB.Board.createBaseBlock('mol');
+  }
+  const blockedPush = gameUB.Abilities.planPushLine(40, 'right');
+  assert(blockedPush.line.length === 7);
+  assert(blockedPush.movements.length === 0, '막혀서 움직이지 않는 블록은 뉴턴 이동 효과 대상이 아니어야 한다');
+  gameUB.Game.state.board[48] = null;
+  const openPush = gameUB.Abilities.planPushLine(40, 'right');
+  assert(openPush.movements.length === 7);
+  assert(openPush.movements.every((movement) => movement.destination === movement.from + 1));
 
   gameUB.Game.state.boardSize = 5;
   gameUB.Game.state.board = Array(25).fill(null);

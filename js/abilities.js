@@ -240,13 +240,33 @@
     return { vector: vector, line: line };
   }
 
+  function planPushLine(index, directionName) {
+    const config = pushLineCells(index, directionName);
+    const occupied = new Set();
+    state().board.forEach(function (block, cell) { if (block) occupied.add(cell); });
+    const movements = [];
+    for (let cursor = config.line.length - 1; cursor >= 0; cursor -= 1) {
+      const from = config.line[cursor];
+      const block = blockAt(from);
+      if (!block) continue;
+      const point = UB.Board.rowCol(from);
+      const destination = UB.Board.toIndex(point.row + config.vector[0], point.col + config.vector[1]);
+      if (destination < 0 || !occupied.has(destination)) {
+        movements.push({ from: from, destination: destination, id: block.id, type: block.type });
+        occupied.delete(from);
+        if (destination >= 0) occupied.add(destination);
+      }
+    }
+    return { vector: config.vector, line: config.line, movements: movements };
+  }
+
   function bestPushDirection(index) {
     return ['up', 'right', 'down', 'left'].map(function (direction) {
-      const config = pushLineCells(index, direction);
-      const edge = config.line[config.line.length - 1];
-      const edgeBlock = edge >= 0 ? blockAt(edge) : null;
-      const removed = edgeBlock && edgeBlock.type === 'base' ? 1 : 0;
-      const moved = config.line.filter(function (cell) { return Boolean(blockAt(cell)); }).length;
+      const plan = planPushLine(index, direction);
+      const removed = plan.movements.filter(function (movement) {
+        return movement.destination < 0 && movement.type === 'base';
+      }).length;
+      const moved = plan.movements.length;
       return { direction: direction, score: removed * 100 + moved };
     }).sort(function (a, b) { return b.score - a.score; })[0].direction;
   }
@@ -256,36 +276,34 @@
       { value: 'up', label: '↑ 위' }, { value: 'right', label: '→ 오른쪽' },
       { value: 'down', label: '↓ 아래' }, { value: 'left', label: '← 왼쪽' }
     ]);
-    const config = pushLineCells(index, directionName);
-    const vector = config.vector;
-    const line = config.line;
+    const plan = planPushLine(index, directionName);
     const directionLabels = { up: '위쪽으로 힘 전달', right: '오른쪽으로 힘 전달', down: '아래쪽으로 힘 전달', left: '왼쪽으로 힘 전달' };
     await UB.UI.playTelegraph(index, {
       symbol: 'N', kind: 'direction', direction: directionName, label: directionLabels[directionName]
     }, 1400);
-    state().pushMotion = line.filter(function (cell) { return Boolean(blockAt(cell)); });
+    state().pushMotion = plan.movements.map(function (movement) { return movement.from; });
     state().pushDirection = directionName;
-    UB.UI.renderBoard();
-    await visualDelay(650);
     const chainIds = [];
-    for (let cursor = line.length - 1; cursor >= 0; cursor -= 1) {
-      const from = line[cursor];
-      const block = blockAt(from);
-      if (!block) continue;
-      const point = UB.Board.rowCol(from);
-      const destination = UB.Board.toIndex(point.row + vector[0], point.col + vector[1]);
-      if (destination < 0) {
-        if (block.type === 'special') chainIds.push(block.id);
-        if (block.type === 'base') { block.removing = true; state().removedBlocks += 1; state().score += Math.round(100 * multiplier(depth)); }
-        state().board[from] = null;
-      } else if (!blockAt(destination)) {
-        state().board[destination] = block;
-        state().board[from] = null;
-      }
+    try {
+      UB.UI.renderBoard();
+      if (plan.movements.length) await visualDelay(650);
+      plan.movements.forEach(function (movement) {
+        const block = blockAt(movement.from);
+        if (!block || block.id !== movement.id) return;
+        if (movement.destination < 0) {
+          if (block.type === 'special') chainIds.push(block.id);
+          if (block.type === 'base') { block.removing = true; state().removedBlocks += 1; state().score += Math.round(100 * multiplier(depth)); }
+          state().board[movement.from] = null;
+        } else {
+          state().board[movement.destination] = block;
+          state().board[movement.from] = null;
+        }
+      });
+    } finally {
+      state().pushMotion = [];
+      state().pushDirection = null;
+      UB.UI.renderBoard();
     }
-    state().pushMotion = [];
-    state().pushDirection = null;
-    UB.UI.renderBoard();
     await visualDelay(220);
     return chainIds;
   }
@@ -675,6 +693,7 @@
     captureBasePositions: captureBasePositions,
     chooseChainUnit: chooseChainUnit,
     findMovementChain: findMovementChain,
+    planPushLine: planPushLine,
     removeBase: removeBase,
     settle: settle
   };
