@@ -194,7 +194,7 @@
 
   function findAvailableRecipe(board) {
     const units = Object.values(UB.DERIVED_UNITS).slice().sort(function (a, b) {
-      return UB.UnitSystem.countRecipe(a.recipe) - UB.UnitSystem.countRecipe(b.recipe);
+      return UB.UnitSystem.countRecipe(b.recipe) - UB.UnitSystem.countRecipe(a.recipe);
     });
     for (let i = 0; i < units.length; i += 1) {
       const materials = UB.UnitSystem.recipeMaterials(units[i]);

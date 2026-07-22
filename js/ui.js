@@ -287,6 +287,14 @@
 
   function closeModal() { refs.modalRoot.classList.remove('open'); refs.modalRoot.replaceChildren(); }
 
+  function suspendModal() { refs.modalRoot.classList.remove('open'); }
+
+  function restoreModal() {
+    if (!refs.modalRoot.children.length) return;
+    refs.modalRoot.classList.add('open');
+    const focusable = refs.modalRoot.querySelector('button, [href], input'); if (focusable) focusable.focus();
+  }
+
   function requestChoice(title, options) {
     return new Promise(function (resolve) {
       const hasDescriptions = options.some(function (option) { return Boolean(option.description); });
@@ -380,7 +388,7 @@
   UB.UI = {
     cache: cache, closeModal: closeModal, drawSelectionPath: drawSelectionPath, flashCountdown: flashCountdown,
     focusBoardCell: focusBoardCell, renderAll: renderAll, renderBoard: renderBoard, renderComposer: renderComposer,
-    playTelegraph: playTelegraph, requestChoice: requestChoice, setShuffleAvailable: setShuffleAvailable, setTargeting: setTargeting,
+    playTelegraph: playTelegraph, requestChoice: requestChoice, restoreModal: restoreModal, setShuffleAvailable: setShuffleAvailable, setTargeting: setTargeting, suspendModal: suspendModal,
     showAbilityBanner: showAbilityBanner, showCodex: showCodex, showGame: showGame, showMenu: showMenu,
     closeInformationalModal: closeInformationalModal, showKeyboardHelp: showKeyboardHelp, showPause: showPause, showResult: showResult, syncGameState: syncGameState,
     toast: toast, updateStatus: updateStatus

@@ -153,6 +153,17 @@ test('보드 경로 탐색은 셀을 중복 사용하지 않는다', () => {
   assert(new Set(pathFound).size === pathFound.length);
 });
 
+test('힌트는 현재 제작 가능한 조합 중 필요한 블록 수가 가장 많은 조합을 우선한다', () => {
+  const board = Array(25).fill(null);
+  ['kg', 'm', 'm', 's', 's', 's', 's', 'A', 'A'].forEach((symbol, order) => {
+    const path = [0, 1, 2, 3, 4, 9, 8, 7, 6];
+    board[path[order]] = UB.Board.createBaseBlock(symbol);
+  });
+  const hint = UB.Board.findAvailableRecipe(board);
+  assert(hint && hint.unit.symbol === 'F');
+  assert(hint.path.length === 9);
+});
+
 test('중력 후 블록 수와 ID가 보존되고 빈칸은 위에 남는다', () => {
   const board = Array(225).fill(null);
   const a = UB.Board.createBaseBlock('kg'); const b = UB.Board.createBaseBlock('m');
@@ -213,7 +224,7 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert((tutorial.match(/chapter: '/g) || []).length === 34);
   assert(!tutorial.includes('restartChapter') && !tutorial.includes('CHAPTER_STARTS'));
-  assert(tutorial.includes('reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex }'));
+  assert(tutorial.includes('reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex, restoreModal:'));
   assert(tutorial.includes('stepIndex -= 1; actionIndex = 0; reviewing = true'));
   assert(tutorial.includes("title: '무제한 모드 켜기'") && tutorial.includes("title: '반응 폭탄'"));
   assert(tutorial.includes("title: '무제한 상태 유지'") && !tutorial.includes("title: '무제한 모드 끄기'"));
@@ -238,7 +249,21 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   assert(tutorial.includes("data-choice=\"Hz\"") && tutorial.includes("data-choice=\"Bq\""));
   assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
   assert(!tutorial.includes('#debug-panel') && !ui.includes('TUTORIAL_STEPS'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial14"'));
+  assert(tutorial.includes('function measureTargetNeighborhood()'));
+  assert(tutorial.includes('previous: measureItem(adjacentItem(-1))') && tutorial.includes('next: measureItem(adjacentItem(1))'));
+  assert(tutorial.includes("scrollIntoView({ behavior: 'auto'") && !tutorial.includes("scrollIntoView({ behavior: 'smooth'"));
+  assert(tutorial.includes("refs.root.classList.add('is-transitioning')") && tutorial.includes("refs.root.classList.remove('is-transitioning')"));
+  assert(tutorial.includes('transitionTimer') && tutorial.includes('commitRender(entering, token)'));
+  assert(!tutorial.includes('syncBackAvailability') && !tutorial.includes('modalObserver'), 'modal back disabling was not rolled back');
+  assert(tutorial.includes('restoreModal: modalOpen && !codexOpen'), 'modal restore state missing');
+  assert(tutorial.includes('UB.UI.suspendModal()') && tutorial.includes('UB.UI.restoreModal()'), 'tutorial modal suspend/restore wiring missing');
+  assert(ui.includes('function suspendModal()') && ui.includes('function restoreModal()'), 'UI modal suspend/restore helpers missing');
+  assert(tutorial.includes('function syncReviewSurface(step)'));
+  assert(tutorial.includes('if (reviewingMainMenu) UB.UI.showMenu()'));
+  assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
+  assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
+  assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial17"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });
 

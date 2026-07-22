@@ -7,12 +7,17 @@
   let stepIndex = 0;
   let actionIndex = 0;
   let positionTimer = null;
+  let positionFrame = null;
+  let transitionTimer = null;
+  let transitionToken = 0;
+  let transitioning = false;
   let waitTimer = null;
   let resizeBound = false;
   let reviewing = false;
   let reviewReturn = null;
   let codexCollapsed = false;
   let codexReadComplete = false;
+  let targetNeighborhood = { previous: null, current: null, next: null };
   let refs = {};
 
   function base(symbol) { return UB.Board.createBaseBlock(symbol); }
@@ -196,11 +201,66 @@
 
   function currentStep() { return steps[stepIndex]; }
   function currentAction() { const step = currentStep(); return !reviewing && step && step.actions ? step.actions[actionIndex] : null; }
+  function syncReviewSurface(step) {
+    const reviewingMainMenu = reviewing && step && step.chapter === '1 · 메인 메뉴';
+    if (reviewingMainMenu) UB.UI.showMenu();
+    else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame();
+    return reviewingMainMenu;
+  }
+  function itemAt(targetStepIndex, targetActionIndex, reviewMode) {
+    const step = steps[targetStepIndex];
+    if (!step) return null;
+    if (step.actions) return step.actions[reviewMode ? 0 : Math.min(targetActionIndex, step.actions.length - 1)];
+    return step;
+  }
+
+  function adjacentItem(direction) {
+    const step = currentStep();
+    if (!step) return null;
+    if (reviewing) {
+      if (direction < 0) return itemAt(stepIndex - 1, 0, true);
+      if (reviewReturn && stepIndex + 1 >= reviewReturn.stepIndex) {
+        return itemAt(reviewReturn.stepIndex, reviewReturn.actionIndex, false);
+      }
+      return itemAt(stepIndex + 1, 0, true);
+    }
+    if (step.actions) {
+      const neighborAction = actionIndex + direction;
+      if (neighborAction >= 0 && neighborAction < step.actions.length) return step.actions[neighborAction];
+    }
+    const neighborStepIndex = stepIndex + direction;
+    const neighborStep = steps[neighborStepIndex];
+    if (!neighborStep) return null;
+    return itemAt(neighborStepIndex, direction < 0 && neighborStep.actions ? neighborStep.actions.length - 1 : 0, false);
+  }
+
+  function resolveItemTarget(item) {
+    if (!item || !item.target) return null;
+    return typeof item.target === 'function' ? item.target() : document.querySelector(item.target);
+  }
+
+  function measureItem(item) {
+    const element = resolveItemTarget(item);
+    if (!element || !element.getClientRects().length) return { item: item, element: element, rect: null };
+    const rect = element.getBoundingClientRect();
+    return { item: item, element: element, rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height } };
+  }
+
+  function measureTargetNeighborhood() {
+    const step = currentStep();
+    const current = currentAction() || (reviewing && step && step.actions ? step.actions[0] : step);
+    targetNeighborhood = {
+      previous: measureItem(adjacentItem(-1)),
+      current: measureItem(current),
+      next: measureItem(adjacentItem(1))
+    };
+    return targetNeighborhood;
+  }
+
   function resolveTarget() {
     const step = currentStep();
     const item = currentAction() || (reviewing && step && step.actions ? step.actions[0] : step);
-    if (!item || !item.target) return null;
-    return typeof item.target === 'function' ? item.target() : document.querySelector(item.target);
+    return resolveItemTarget(item);
   }
 
   function setShield(shield, left, top, width, height) {
@@ -208,10 +268,11 @@
     shield.style.width = Math.max(0, width) + 'px'; shield.style.height = Math.max(0, height) + 'px';
   }
 
-  function position() {
+  function position(premeasuredTarget) {
     if (!active && !offering) return;
     window.clearTimeout(positionTimer);
-    const target = active ? resolveTarget() : null;
+    const measuredElement = premeasuredTarget && premeasuredTarget.nodeType === 1 ? premeasuredTarget : null;
+    const target = active ? measuredElement || resolveTarget() : null;
     const vw = document.documentElement.clientWidth; const vh = window.innerHeight;
     if (!target || !target.getClientRects().length) {
       refs.ring.hidden = true;
@@ -222,10 +283,10 @@
       if (active) positionTimer = window.setTimeout(position, 220);
       return;
     }
-    const rect = target.getBoundingClientRect();
+    let rect = target.getBoundingClientRect();
     if (rect.bottom <= 0 || rect.top >= vh) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-      positionTimer = window.setTimeout(position, 360); return;
+      target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+      rect = target.getBoundingClientRect();
     }
     const pad = 7;
     const hole = { left: Math.max(0, rect.left - pad), top: Math.max(0, rect.top - pad), right: Math.min(vw, rect.right + pad), bottom: Math.min(vh, rect.bottom + pad) };
@@ -276,11 +337,32 @@
     refs.ring.classList.remove('is-warning'); void refs.ring.offsetWidth; refs.ring.classList.add('is-warning');
   }
 
-  function render(entering) {
-    window.clearInterval(waitTimer);
+  function preparePosition(onReady) {
+    window.clearTimeout(positionTimer);
+    if (positionFrame !== null) window.cancelAnimationFrame(positionFrame);
+    const neighborhood = measureTargetNeighborhood();
+    const target = neighborhood.current && neighborhood.current.element;
+    if (target && neighborhood.current.rect && (neighborhood.current.rect.bottom <= 0 || neighborhood.current.rect.top >= window.innerHeight)) {
+      target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    }
+    positionFrame = window.requestAnimationFrame(function () {
+      positionFrame = window.requestAnimationFrame(function () {
+        if (!active && !offering) return;
+        const settled = active ? measureTargetNeighborhood() : null;
+        position(settled && settled.current ? settled.current.element : null);
+        void refs.ring.offsetWidth;
+        positionFrame = null;
+        if (onReady) onReady();
+      });
+    });
+  }
+
+  function commitRender(entering, token) {
+    if (token !== transitionToken) return;
     const step = currentStep(); if (!step) { finish(); return; }
     if (entering && step.onEnter) step.onEnter();
-    document.body.classList.toggle('tutorial-in-game', Boolean(state().tutorialMode && state().status !== 'menu'));
+    const reviewingMainMenu = syncReviewSurface(step);
+    document.body.classList.toggle('tutorial-in-game', !reviewingMainMenu && Boolean(state().tutorialMode && state().status !== 'menu'));
     if (!document.querySelector('#modal-root .codex-modal')) { codexCollapsed = false; codexReadComplete = false; }
     const current = currentAction();
     refs.chapter.textContent = step.chapter;
@@ -295,13 +377,30 @@
     refs.next.hidden = Boolean(current) && !reviewing;
     refs.next.textContent = reviewing ? '다음' : stepIndex === steps.length - 1 ? '완료' : '다음';
     refs.root.hidden = false;
-    positionTimer = window.setTimeout(position, 30);
-    if (current && current.wait) {
-      waitTimer = window.setInterval(function () {
-        if (!active) return;
-        if (current.after()) completeAction(current);
-      }, 180);
-    }
+    preparePosition(function () {
+      if (token !== transitionToken) return;
+      refs.root.classList.remove('is-transitioning');
+      transitioning = false;
+      if (current && current.wait) {
+        waitTimer = window.setInterval(function () {
+          if (!active || transitioning) return;
+          if (current.after()) completeAction(current);
+        }, 180);
+      }
+    });
+  }
+
+  function render(entering) {
+    window.clearInterval(waitTimer);
+    window.clearTimeout(transitionTimer);
+    if (positionFrame !== null) window.cancelAnimationFrame(positionFrame);
+    const step = currentStep(); if (!step) { finish(); return; }
+    const token = ++transitionToken;
+    transitioning = true;
+    refs.root.hidden = false;
+    measureTargetNeighborhood();
+    refs.root.classList.add('is-transitioning');
+    transitionTimer = window.setTimeout(function () { commitRender(entering, token); }, 120);
   }
 
   function completeAction(completed) {
@@ -317,6 +416,7 @@
 
   function handleGuidedClick(event) {
     if (!active) return;
+    if (transitioning) { event.preventDefault(); event.stopPropagation(); return; }
     if (event.target.closest('[data-tutorial-control]')) return;
     const current = currentAction();
     if (!current || current.wait) { pulse(); return; }
@@ -346,7 +446,7 @@
   }
 
   function handleGuidedScroll(event) {
-    if (!active) return;
+    if (!active || transitioning) return;
     const current = currentAction();
     if (!current || !current.scroll) return;
     const target = resolveTarget();
@@ -366,9 +466,12 @@
   function finish() {
     active = false; offering = false;
     reviewing = false; reviewReturn = null; codexCollapsed = false; codexReadComplete = false;
-    window.clearInterval(waitTimer); window.clearTimeout(positionTimer);
+    transitioning = false; transitionToken += 1;
+    window.clearInterval(waitTimer); window.clearTimeout(positionTimer); window.clearTimeout(transitionTimer);
+    if (positionFrame !== null) window.cancelAnimationFrame(positionFrame);
+    positionFrame = null; targetNeighborhood = { previous: null, current: null, next: null };
     localStorage.setItem('unitBreakerTutorialSeen', '1');
-    refs.root.hidden = true; document.body.classList.remove('tutorial-active');
+    refs.root.classList.remove('is-transitioning'); refs.root.hidden = true; document.body.classList.remove('tutorial-active');
     document.body.classList.remove('tutorial-in-game');
     document.querySelector('#home-button').disabled = false;
     UB.UI.closeModal();
@@ -378,7 +481,7 @@
   function start() {
     if (!refs.root) cache();
     offering = false; active = true; stepIndex = 0; actionIndex = 0;
-    reviewing = false; reviewReturn = null; codexCollapsed = false; codexReadComplete = false;
+    reviewing = false; reviewReturn = null; codexCollapsed = false; codexReadComplete = false; transitioning = false;
     UB.UI.closeModal(); UB.Game.backToMenu(); UB.UI.showMenu();
     document.body.classList.add('tutorial-active'); document.body.classList.remove('tutorial-in-game');
     document.querySelector('#home-button').disabled = true;
@@ -388,7 +491,7 @@
   function offer() {
     if (!refs.root) cache();
     if (active || localStorage.getItem('unitBreakerTutorialSeen')) return;
-    offering = true; refs.root.hidden = false; document.body.classList.add('tutorial-active');
+    offering = true; refs.root.classList.remove('is-transitioning'); refs.root.hidden = false; document.body.classList.add('tutorial-active');
     refs.chapter.textContent = 'FIRST EXPERIMENT'; refs.count.textContent = '';
     refs.title.textContent = '직접 해보는 튜토리얼';
     refs.body.textContent = '메뉴부터 유도단위 제작, 이동 연쇄, 셔플과 반응 폭탄까지 실제 화면을 조작하며 익힐 수 있습니다.';
@@ -400,13 +503,16 @@
   function bind() {
     cache();
     refs.next.addEventListener('click', function () {
+      if (transitioning) return;
       if (offering) { refs.back.hidden = false; refs.skip.textContent = '건너뛰기'; start(); return; }
       if (!active) return;
       if (reviewing && reviewReturn) {
         stepIndex += 1;
         if (stepIndex >= reviewReturn.stepIndex) {
-          stepIndex = reviewReturn.stepIndex; actionIndex = reviewReturn.actionIndex;
+          const returnState = reviewReturn;
+          stepIndex = returnState.stepIndex; actionIndex = returnState.actionIndex;
           reviewing = false; reviewReturn = null;
+          if (returnState.restoreModal) UB.UI.restoreModal();
         }
         render(false); return;
       }
@@ -414,13 +520,15 @@
     });
     refs.skip.addEventListener('click', finish);
     refs.back.addEventListener('click', function () {
-      if (!active || stepIndex <= 0) return;
+      if (!active || transitioning || stepIndex <= 0) return;
+      const modalRoot = document.querySelector('#modal-root');
+      const modalOpen = Boolean(modalRoot && modalRoot.classList.contains('open'));
       const codexOpen = Boolean(document.querySelector('#modal-root .codex-modal'));
-      if (!reviewing) reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex };
+      if (!reviewing) reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex, restoreModal: modalOpen && !codexOpen };
       if (codexOpen) {
         UB.UI.closeInformationalModal();
         codexCollapsed = false; codexReadComplete = false;
-      }
+      } else if (modalOpen) UB.UI.suspendModal();
       stepIndex -= 1; actionIndex = 0; reviewing = true; render(false);
     });
     refs.shields.forEach(function (shield) { shield.addEventListener('click', pulse); });
