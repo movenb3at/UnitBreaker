@@ -253,7 +253,7 @@ kbd { padding: 2px 4px; border: 1px solid var(--line); border-radius: 3px; color
 .tutorial-coach.is-collapsed .tutorial-coach-actions { grid-template-columns: 1fr 1fr; margin-top: 7px; }
 .tutorial-coach.is-collapsed .tutorial-coach-actions button { min-height: 32px; padding: 5px 8px; }
 .tutorial-coach.is-collapsed .tutorial-coach-actions .primary-button[hidden] { display: none; }
-.tutorial-in-game .tutorial-coach.is-codex-reading { width: min(330px, calc(100vw - 24px)) !important; }
+.tutorial-coach.is-codex-reading { width: min(330px, calc(100vw - 24px)) !important; }
 .tutorial-active #debug-panel { visibility: hidden; }
 
 @keyframes timerPulse { 50% { transform: scale(1.1); text-shadow: 0 0 12px rgba(255,107,120,.5); } }
@@ -333,7 +333,7 @@ kbd { padding: 2px 4px; border: 1px solid var(--line); border-radius: 3px; color
   .tutorial-coach { max-height: 43vh; padding: 14px; border-radius: 11px; }
   .tutorial-in-game .tutorial-coach { max-height: 36vh; padding: 12px; }
   .tutorial-coach.is-collapsed { max-height: 170px; padding: 9px 10px; }
-  .tutorial-in-game .tutorial-coach.is-codex-reading { width: min(260px, calc(100vw - 110px)) !important; }
+  .tutorial-coach.is-codex-reading { width: min(260px, calc(100vw - 110px)) !important; }
   .tutorial-coach h2 { font-size: 1rem; }
   .tutorial-coach > p { font-size: .7rem; }
   .tutorial-coach-actions { grid-template-columns: auto auto 1fr; }

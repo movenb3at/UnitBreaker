@@ -231,13 +231,14 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   assert(css.includes('.tutorial-coach.is-collapsed'));
   assert(tutorial.includes("classList.contains('is-codex-reading')"));
   assert(tutorial.includes("setProperty('width', safeWidth + 'px', 'important')"));
-  assert(css.includes('.tutorial-in-game .tutorial-coach.is-codex-reading'));
+  assert(tutorial.includes('Math.min(centeredLeft, closeSafeLeft)'));
+  assert(css.includes('.tutorial-coach.is-codex-reading'));
   assert(tutorial.includes("input[name=\"difficulty\"][value=\"easy\"]').closest('label')"));
   assert(tutorial.includes("action('#hint-button'") && tutorial.includes("action('#shuffle-button'") && tutorial.includes("action('#bonus-item-button'"));
   assert(tutorial.includes("data-choice=\"Hz\"") && tutorial.includes("data-choice=\"Bq\""));
   assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
   assert(!tutorial.includes('#debug-panel') && !ui.includes('TUTORIAL_STEPS'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial12"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial14"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });
 

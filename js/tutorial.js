@@ -241,13 +241,15 @@
     refs.coach.style.removeProperty('width');
     refs.coach.style.width = cardWidth + 'px';
     const cardHeight = refs.coach.offsetHeight;
-    if (inGame && refs.coach.classList.contains('is-codex-reading')) {
+    if (refs.coach.classList.contains('is-codex-reading')) {
       const close = document.querySelector('#modal-root [data-close]');
       const closeRect = close ? close.getBoundingClientRect() : null;
       const availableWidth = closeRect ? Math.max(190, (closeRect.left - 12 - vw / 2) * 2) : refs.coach.offsetWidth;
       const safeWidth = Math.min(refs.coach.offsetWidth, availableWidth);
+      const centeredLeft = (vw - safeWidth) / 2;
+      const closeSafeLeft = closeRect ? closeRect.left - 12 - safeWidth : centeredLeft;
       refs.coach.style.setProperty('width', safeWidth + 'px', 'important');
-      refs.coach.style.left = Math.max(12, (vw - safeWidth) / 2) + 'px';
+      refs.coach.style.left = Math.max(12, Math.min(centeredLeft, closeSafeLeft)) + 'px';
       refs.coach.style.top = '10px';
       return;
     }
