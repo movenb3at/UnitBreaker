@@ -196,12 +196,19 @@
     const units = Object.values(UB.DERIVED_UNITS).slice().sort(function (a, b) {
       return UB.UnitSystem.countRecipe(b.recipe) - UB.UnitSystem.countRecipe(a.recipe);
     });
+    const candidates = [];
+    let bestRecipeSize = null;
     for (let i = 0; i < units.length; i += 1) {
+      const recipeSize = UB.UnitSystem.countRecipe(units[i].recipe);
+      if (bestRecipeSize !== null && recipeSize < bestRecipeSize) break;
       const materials = UB.UnitSystem.recipeMaterials(units[i]);
       const path = pathForMaterials(board, materials);
-      if (path) return { unit: units[i], path: path, materials: materials };
+      if (path) {
+        bestRecipeSize = recipeSize;
+        candidates.push({ unit: units[i], path: path, materials: materials });
+      }
     }
-    return null;
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
   }
 
   function findBlockIndex(board, id) {

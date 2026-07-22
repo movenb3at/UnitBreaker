@@ -164,6 +164,20 @@ test('힌트는 현재 제작 가능한 조합 중 필요한 블록 수가 가�
   assert(hint.path.length === 9);
 });
 
+test('최대 블록 수가 같은 힌트 후보는 등록 순서의 첫 단위에 고정되지 않는다', () => {
+  const board = Array(25).fill(null);
+  board[0] = UB.Board.createBaseBlock('s');
+  const originalRandom = Math.random;
+  Math.random = () => 0.99;
+  try {
+    const hint = UB.Board.findAvailableRecipe(board);
+    assert(hint && hint.unit.symbol === 'Bq');
+    assert(hint.path.length === 1);
+  } finally {
+    Math.random = originalRandom;
+  }
+});
+
 test('중력 후 블록 수와 ID가 보존되고 빈칸은 위에 남는다', () => {
   const board = Array(225).fill(null);
   const a = UB.Board.createBaseBlock('kg'); const b = UB.Board.createBaseBlock('m');
@@ -264,6 +278,7 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
   assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial17"'));
+  assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });
 
