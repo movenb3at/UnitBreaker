@@ -55,8 +55,11 @@ test('난이도별 보드는 5×5, 10×10, 15×15 크기로 생성된다', () =>
   assert(UB.DIFFICULTIES.hard.seconds === 360);
 });
 
-test('반응 폭탄 획득 기준은 3, 5, 9, 15, 23 순서다', () => {
-  assert([1, 2, 3, 4, 5].map(UB.bonusItemThreshold).join(',') === '3,5,9,15,23');
+test('반응 폭탄 획득 기준은 증가율을 유지하며 전체 특수 단위 수를 넘지 않는다', () => {
+  const specialUnitCount = Object.keys(UB.DERIVED_UNITS).length;
+  assert([1, 2, 3, 4].map(UB.bonusItemThreshold).join(',') === '3,5,9,15');
+  assert(UB.bonusItemThreshold(5) === specialUnitCount);
+  assert(UB.bonusItemThreshold(100) === specialUnitCount);
 });
 
 test('모든 보드 크기에서 7개 기본단위가 각각 최소 3개 있다', () => {
@@ -277,7 +280,7 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260722-tutorial17"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260726-tutorial18"'));
   assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });

@@ -11,7 +11,9 @@
   UB.DIFFICULTY_SECONDS = { easy: 600, normal: 480, hard: 360 };
   UB.bonusItemThreshold = function (term) {
     const n = Math.max(1, Math.floor(term || 1));
-    return 3 + n * (n - 1);
+    const threshold = 3 + n * (n - 1);
+    const specialUnitCount = Object.keys(UB.DERIVED_UNITS || {}).length;
+    return specialUnitCount ? Math.min(threshold, specialUnitCount) : threshold;
   };
   UB.BASE_UNIT_WEIGHTS = { m: 24, s: 22, kg: 18, A: 12, K: 10, mol: 8, cd: 6 };
 

@@ -143,7 +143,7 @@
     { chapter: '2 · 게임 화면', title: '일시정지', body: 'Ⅱ 버튼 또는 P 키로 실험과 타이머를 멈출 수 있습니다.', actions: [action('#pause-button', 'Ⅱ 버튼을 눌러 일시정지하세요.', function () { return state().isPaused && document.querySelector('#modal-root [data-resume]'); })] },
     { chapter: '2 · 게임 화면', title: '계속하기와 메뉴', body: '일시정지 창의 계속하기는 실험을 재개하고, 메뉴로는 현재 실험을 종료합니다.', actions: [action('#modal-root [data-resume]', '계속하기를 누르세요.', function () { return !state().isPaused && state().status === 'playing'; })] },
     { chapter: '2 · 게임 화면', title: '보드와 범례', body: '보드는 7가지 SI 기본단위 kg, m, s, A, K, mol, cd로 구성됩니다. 아래 범례에서 색과 물리량을 확인할 수 있습니다.', target: '.board-panel', info: true },
-    { chapter: '2 · 게임 화면', title: '반응 폭탄', body: '서로 다른 유도단위를 3종, 5종, 9종… 만들 때마다 3×3 반응 폭탄을 얻습니다. 숫자는 보유량, 아래 표시는 다음 획득 진행도입니다.', target: '#bonus-item-button', info: true },
+    { chapter: '2 · 게임 화면', title: '반응 폭탄', body: '서로 다른 유도단위를 3종, 5종, 9종… 만들 때마다 3×3 반응 폭탄을 얻습니다. 필요한 종류 수는 계속 증가하지만 전체 특수 유도단위 종류 수를 넘지 않습니다. 숫자는 보유량, 아래 표시는 다음 획득 진행도입니다.', target: '#bonus-item-button', info: true },
     { chapter: '3 · 뉴턴 제작', title: '힌트 사용', body: '힌트는 현재 보드에서 실제로 제작 가능한 연결 경로 하나를 강조하며, 경로가 없으면 횟수를 소모하지 않습니다.', actions: [action('#hint-button', '힌트 버튼을 한 번 누르세요.', function () { return state().hintsRemaining === 6 && state().hintPath.length > 0; })] },
     { chapter: '3 · 뉴턴 제작', title: 'kg 선택', body: '블록은 직전 블록의 상하좌우 또는 대각선, 즉 8방향으로 이어 선택합니다.', actions: [action(cell(17), '강조된 kg 블록을 선택하세요.', function () { return state().selectedCells.join(',') === '17'; })] },
     { chapter: '3 · 뉴턴 제작', title: 'm 연결', body: '선택 순서는 연결 경로를 만들지만, 최종 단위는 각 재료의 분자·분모 역할로 결정됩니다.', actions: [action(cell(11), '대각선 위의 m을 이어 선택하세요.', function () { return state().selectedCells.join(',') === '17,11'; })] },
