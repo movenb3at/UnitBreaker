@@ -8,7 +8,7 @@
 
   function bindEvents() {
     document.querySelector('#start-button').addEventListener('click', function () {
-      UB.Audio.unlock(); UB.Game.initialize(selectedDifficulty(), document.querySelector('#unlimited-mode').checked);
+      UB.Game.initialize(selectedDifficulty(), document.querySelector('#unlimited-mode').checked);
     });
     document.querySelectorAll('[data-open="tutorial"]').forEach(function (button) { button.addEventListener('click', function () { UB.Tutorial.start(); }); });
     document.querySelectorAll('[data-open="codex"]').forEach(function (button) { button.addEventListener('click', UB.UI.showCodex); });
@@ -21,12 +21,6 @@
     document.querySelector('#bonus-item-button').addEventListener('click', function () { UB.Game.useBonusItem(); });
     document.querySelector('#reset-selection').addEventListener('click', function () { UB.Game.clearSelection(); });
     document.querySelector('#craft-button').addEventListener('click', function () { UB.Game.craftDerivedUnit(); });
-    document.querySelector('#sound-button').addEventListener('click', function (event) {
-      const muted = UB.Audio.toggle(); event.currentTarget.textContent = muted ? '×' : '♪';
-      event.currentTarget.setAttribute('aria-pressed', String(muted));
-      event.currentTarget.setAttribute('aria-label', muted ? '음향 켜기' : '음향 끄기');
-    });
-
     document.querySelector('#board').addEventListener('click', function (event) {
       const cell = event.target.closest('.cell'); if (!cell) return;
       UB.Game.state.focusedIndex = Number(cell.dataset.index); UB.Game.selectCell(Number(cell.dataset.index));
@@ -89,7 +83,7 @@
         let target = state.board.findIndex(function (block) { return !block; }); if (target < 0) target = 112;
         state.board[target] = UB.Board.createSpecialBlock(unit); UB.UI.renderAll();
       }
-      if (action === 'reset') { state.board = UB.Board.generateBoard(); state.removedBlocks = 0; UB.Game.clearSelection(true); }
+      if (action === 'reset') { state.board = UB.Board.generateBoard(); state.removedBlocks = 0; UB.Game.clearSelection(); }
       if (action === 'clear') { state.board = state.board.map(function () { return null; }); UB.UI.renderAll(); }
       if (action === 'gravity') await UB.Abilities.settle();
       if (action === 'shuffle') UB.Game.shuffle(true);

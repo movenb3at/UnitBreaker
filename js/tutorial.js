@@ -30,19 +30,6 @@
     return board;
   }
 
-  function hzBoard() {
-    const board = Array(25).fill(null);
-    board[22] = base('s');
-    board[4] = base('K'); board[9] = base('mol'); board[14] = base('kg'); board[19] = base('cd'); board[24] = base('A');
-    return board;
-  }
-
-  function noRecipeBoard() {
-    const board = Array(25).fill(null);
-    board[0] = base('kg'); board[4] = base('m'); board[12] = base('K'); board[20] = base('s'); board[24] = base('A');
-    return board;
-  }
-
   function filledBoard() { return Array.from({ length: 25 }, function () { return base('K'); }); }
 
   function cell(index) { return '#board .cell[data-index="' + index + '"]'; }
@@ -51,12 +38,6 @@
   function role(order, value) {
     const element = document.querySelector(chip(order));
     return element && element.dataset.role === value;
-  }
-
-  function codexScrollAction() {
-    return action('#modal-root .codex-modal', '도감을 맨 아래까지 스크롤해 모든 단위를 확인하세요.', function () {
-      return codexReadComplete && !document.querySelector('#modal-root').classList.contains('open');
-    }, { scroll: true });
   }
 
   function action(target, label, after, options) {
@@ -74,12 +55,12 @@
     ];
   }
 
-  function rebuildActions() {
+  function selectNewtonActions() {
     return NEWTON_PATH.map(function (index, order) {
       return action(cell(index), (order + 1) + '번째 재료 ' + ['kg', 'm', 's', 's'][order] + '를 선택하세요.', function () {
         return state().selectedCells.length === order + 1;
       });
-    }).concat(assignActions());
+    });
   }
 
   function prepareNewton() {
@@ -88,20 +69,14 @@
     UB.Game.startTutorialSession(newtonBoard());
   }
 
-  function prepareHz() {
-    if (!state().tutorialMode) UB.Game.startTutorialSession(hzBoard());
-    state().board = hzBoard();
-    state().selectedCells = []; state().assignments = {}; state().placementCandidates = [];
-    state().pendingUnit = null; state().status = 'playing'; state().isAnimating = false;
-    state().craftedUnits = ['N', 'C']; state().bonusUnitTypes = ['N', 'C'];
-    state().correctCrafts = 2; state().bonusItems = 0; state().bonusMilestone = 0; state().nextBonusThreshold = 3;
-    UB.UI.closeModal(); UB.UI.renderAll();
-  }
-
-  function prepareShuffle() {
-    state().board = noRecipeBoard(); state().selectedCells = []; state().assignments = {};
-    state().placementCandidates = []; state().pendingUnit = null; state().status = 'playing'; state().isAnimating = false;
-    UB.UI.closeModal(); UB.UI.renderAll(); UB.UI.setShuffleAvailable(true);
+  function showNewtonHint() {
+    const current = state();
+    if (current.status !== 'playing' || current.hintsRemaining <= 0) return;
+    current.hintsRemaining -= 1;
+    current.hintPath = NEWTON_PATH.slice();
+    UB.UI.toast('뉴턴 kg·m / s² 경로를 강조했습니다.');
+    UB.UI.renderBoard();
+    UB.UI.updateStatus();
   }
 
   function prepareBomb() {
@@ -111,77 +86,23 @@
     UB.UI.closeModal(); UB.UI.renderAll();
   }
 
-  function showTutorialResult() {
-    state().board = Array(25).fill(null);
-    state().removedBlocks = Math.max(state().removedBlocks, 25);
-    UB.UI.renderAll();
-    UB.Game.win();
-  }
-
   const steps = [
-    { chapter: '1 · 메인 메뉴', title: '참여형 튜토리얼', body: '이 안내는 설명만 넘기는 슬라이드가 아닙니다. 강조된 실제 화면 요소를 직접 조작하며 진행합니다.', target: '.menu-actions', info: true },
-    { chapter: '1 · 메인 메뉴', title: '난이도 선택', body: '쉬움·보통·어려움은 보드 크기, 제한 시간, 힌트 수를 함께 바꿉니다.', actions: [action(function () { return document.querySelector('input[name="difficulty"][value="easy"]').closest('label'); }, '쉬움을 선택하세요.', function () { return document.querySelector('input[value="easy"]').checked; })] },
-    { chapter: '1 · 메인 메뉴', title: '무제한 모드 켜기', body: '무제한 모드는 시간 제한과 셔플의 10초 페널티를 없애지만, 난이도의 보드 크기와 힌트 수는 유지합니다.', actions: [action('.unlimited-toggle', '무제한 모드를 켜세요.', function () { return document.querySelector('#unlimited-mode').checked; })] },
-    { chapter: '1 · 메인 메뉴', title: '무제한 상태 유지', body: '튜토리얼에서는 시간에 쫓기지 않고 각 효과를 확인할 수 있도록 무제한 모드를 켠 채 진행합니다. 셔플도 무료입니다.', target: '.unlimited-toggle', info: true },
-    { chapter: '1 · 메인 메뉴', title: '단위 도감', body: '도감에는 모든 유도단위의 차원식, 재료, 실제 쓰임과 게임 능력이 정리되어 있습니다.', actions: [
-      action('[data-open="codex"]', '단위 도감을 여세요.', function () { return document.querySelector('#modal-root').classList.contains('open'); }),
-      codexScrollAction()
-    ] },
-    { chapter: '2 · 게임 화면', title: '연습 실험 시작', body: '실험 시작 버튼은 선택한 설정으로 새 보드를 만듭니다. 튜토리얼에서는 결과가 기록되지 않는 고정 5×5 보드를 사용합니다.', actions: [action('#start-button', '실험 시작을 누르세요.', function () { return state().tutorialMode && state().status === 'playing'; }, { intercept: true, run: prepareNewton })] },
-    { chapter: '2 · 게임 화면', title: '상태 표시', body: '위쪽에는 남은 시간, 남은 기본 블록, 점수, 최고 연쇄가 표시됩니다. 튜토리얼 중에는 시간이 멈춰 있습니다.', target: '.status-cluster', info: true },
-    { chapter: '2 · 게임 화면', title: '홈 버튼', body: 'UNIT BREAKER 로고는 현재 실험을 버리고 메인 메뉴로 돌아갑니다. 튜토리얼 중에는 건너뛰기 버튼이 같은 역할을 합니다.', target: '#home-button', info: true },
-    { chapter: '2 · 게임 화면', title: '게임 중 단위 도감', body: '게임 중 도감을 열면 실험이 자동으로 일시정지됩니다.', actions: [
-      action('#codex-button', '▦ 도감 버튼을 누르세요.', function () { return document.querySelector('#modal-root').classList.contains('open') && state().isPaused; }),
-      codexScrollAction()
-    ] },
-    { chapter: '2 · 게임 화면', title: '키보드 조작법', body: '⌨ 버튼은 방향키, Enter·Space, Backspace, Esc, H, R, P 단축키를 보여줍니다.', actions: [
-      action('#keyboard-help-button', '⌨ 버튼을 눌러 조작법을 여세요.', function () { return document.querySelector('#modal-root .shortcut-grid'); }),
-      action('#modal-root [data-close]', '확인한 뒤 ×로 닫으세요.', function () { return !document.querySelector('#modal-root').classList.contains('open'); })
-    ] },
-    { chapter: '2 · 게임 화면', title: '음향 끄기', body: '♪ 버튼은 효과음 전체를 켜고 끕니다. 설정은 브라우저에 저장됩니다.', actions: [action('#sound-button', '♪ 버튼을 눌러 음향을 끄세요.', function () { return document.querySelector('#sound-button').getAttribute('aria-pressed') === 'true'; })] },
-    { chapter: '2 · 게임 화면', title: '음향 켜기', body: '같은 버튼을 다시 누르면 효과음이 켜집니다.', actions: [action('#sound-button', '× 버튼을 눌러 음향을 켜세요.', function () { return document.querySelector('#sound-button').getAttribute('aria-pressed') === 'false'; })] },
-    { chapter: '2 · 게임 화면', title: '일시정지', body: 'Ⅱ 버튼 또는 P 키로 실험과 타이머를 멈출 수 있습니다.', actions: [action('#pause-button', 'Ⅱ 버튼을 눌러 일시정지하세요.', function () { return state().isPaused && document.querySelector('#modal-root [data-resume]'); })] },
-    { chapter: '2 · 게임 화면', title: '계속하기와 메뉴', body: '일시정지 창의 계속하기는 실험을 재개하고, 메뉴로는 현재 실험을 종료합니다.', actions: [action('#modal-root [data-resume]', '계속하기를 누르세요.', function () { return !state().isPaused && state().status === 'playing'; })] },
-    { chapter: '2 · 게임 화면', title: '보드와 범례', body: '보드는 7가지 SI 기본단위 kg, m, s, A, K, mol, cd로 구성됩니다. 아래 범례에서 색과 물리량을 확인할 수 있습니다.', target: '.board-panel', info: true },
-    { chapter: '2 · 게임 화면', title: '반응 폭탄', body: '서로 다른 유도단위를 3종, 5종, 9종… 만들 때마다 3×3 반응 폭탄을 얻습니다. 필요한 종류 수는 계속 증가하지만 전체 특수 유도단위 종류 수를 넘지 않습니다. 숫자는 보유량, 아래 표시는 다음 획득 진행도입니다.', target: '#bonus-item-button', info: true },
-    { chapter: '3 · 뉴턴 제작', title: '힌트 사용', body: '힌트는 현재 보드에서 실제로 제작 가능한 연결 경로 하나를 강조하며, 경로가 없으면 횟수를 소모하지 않습니다.', actions: [action('#hint-button', '힌트 버튼을 한 번 누르세요.', function () { return state().hintsRemaining === 6 && state().hintPath.length > 0; })] },
-    { chapter: '3 · 뉴턴 제작', title: 'kg 선택', body: '블록은 직전 블록의 상하좌우 또는 대각선, 즉 8방향으로 이어 선택합니다.', actions: [action(cell(17), '강조된 kg 블록을 선택하세요.', function () { return state().selectedCells.join(',') === '17'; })] },
-    { chapter: '3 · 뉴턴 제작', title: 'm 연결', body: '선택 순서는 연결 경로를 만들지만, 최종 단위는 각 재료의 분자·분모 역할로 결정됩니다.', actions: [action(cell(11), '대각선 위의 m을 이어 선택하세요.', function () { return state().selectedCells.join(',') === '17,11'; })] },
-    { chapter: '3 · 뉴턴 제작', title: '첫 번째 s 연결', body: '뉴턴에는 시간 단위 s가 두 개 필요합니다.', actions: [action(cell(5), '첫 번째 s를 이어 선택하세요.', function () { return state().selectedCells.join(',') === '17,11,5'; })] },
-    { chapter: '3 · 뉴턴 제작', title: '두 번째 s 연결', body: '같은 종류의 블록도 각각 하나의 재료로 취급됩니다.', actions: [action(cell(1), '두 번째 s를 이어 선택하세요.', function () { return state().selectedCells.length === 4; })] },
-    { chapter: '3 · 뉴턴 제작', title: '마지막 선택 취소와 복구', body: '경로 끝 블록을 다시 누르거나 Backspace를 누르면 마지막 선택만 취소됩니다. 같은 블록을 다시 눌러 곧바로 복구할 수 있습니다.', actions: [
-      action(cell(1), '방금 고른 s를 다시 눌러 취소하세요.', function () { return state().selectedCells.length === 3; }),
-      action(cell(1), 's를 다시 선택해 재료 네 개를 복구하세요.', function () { return state().selectedCells.length === 4; })
-    ] },
-    { chapter: '3 · 뉴턴 제작', title: '분자와 분모 지정', body: '재료 칩은 미지정 → 분자 → 분모 → 미지정 순서로 바뀝니다. kg·m을 분자, s 두 개를 분모로 지정합니다.', actions: assignActions() },
-    { chapter: '3 · 뉴턴 제작', title: '차원식과 예상 결과', body: '조합기는 kg·m/s², 차원 벡터 [1, 1, −2, 0, 0, 0, 0], 그리고 힘의 단위 뉴턴(N)을 실시간으로 보여줍니다.', target: '.dimension-readout, #result-preview', info: true },
-    { chapter: '3 · 뉴턴 제작', title: '초기화', body: '초기화 버튼 또는 R 키는 현재 선택 경로와 모든 역할 지정을 지웁니다.', actions: [action('#reset-selection', '초기화를 눌러 선택을 모두 지우세요.', function () { return state().selectedCells.length === 0; })] },
-    { chapter: '3 · 뉴턴 제작', title: '뉴턴식 다시 만들기', body: '이번에는 같은 경로와 역할을 한 단계 안에서 다시 완성해 봅니다.', actions: rebuildActions() },
-    { chapter: '3 · 뉴턴 제작', title: '뉴턴 제작', body: '정확한 차원식이 완성되면 제작 버튼이 활성화됩니다. 제작 후에는 사용한 네 칸 중 유도단위를 놓을 위치를 고릅니다.', actions: [action('#craft-button', '제작 버튼을 누르세요.', function () { return state().status === 'placing'; })] },
-    { chapter: '3 · 뉴턴 제작', title: '배치 위치 선택', body: '강조된 후보 중 하나가 뉴턴의 중심이 됩니다. 나머지 재료 블록은 사라집니다.', actions: [action(cell(17), '원래 kg가 있던 칸에 N을 놓으세요.', function () { return state().status === 'animating' || document.querySelector('#modal-root [data-choice="up"]'); })] },
-    { chapter: '3 · 뉴턴 제작', title: '힘의 방향과 이동 연쇄', body: '뉴턴은 고른 방향으로 블록을 밉니다. 이동한 A가 s와 새로 연결되면 C가 자동 제작되어 2연쇄가 됩니다.', actions: [
+    { chapter: '1 · 핵심 플레이', title: '연습 시작', body: '시간이 멈춘 5×5 연습 보드에서 유도단위 하나를 직접 만들어 봅니다.', actions: [action('#start-button', '실험 시작을 누르세요.', function () { return state().tutorialMode && state().status === 'playing'; }, { intercept: true, run: prepareNewton })] },
+    { chapter: '1 · 핵심 플레이', title: '힌트로 뉴턴 표시', body: '힌트는 현재 보드에서 실제로 제작 가능한 연결 경로를 강조합니다. 먼저 뉴턴(N)의 재료 경로를 확인하세요.', actions: [action('#hint-button', '힌트를 눌러 뉴턴 경로를 표시하세요.', function () { return state().hintsRemaining === 6 && state().hintPath.join(',') === NEWTON_PATH.join(','); }, { intercept: true, run: showNewtonHint })] },
+    { chapter: '1 · 핵심 플레이', title: '연결된 재료 선택', body: '필요한 기본단위 블록을 상하좌우 또는 대각선으로 이어 선택합니다. 뉴턴(N)을 만들 kg·m·s·s를 순서대로 고르세요.', actions: selectNewtonActions() },
+    { chapter: '1 · 핵심 플레이', title: '분자와 분모 지정', body: '선택한 재료를 눌러 분자 또는 분모에 배치합니다. kg·m은 분자, s 두 개는 분모로 지정해 kg·m/s²를 만드세요.', actions: assignActions() },
+    { chapter: '1 · 핵심 플레이', title: '유도단위 제작', body: '차원식이 등록된 유도단위와 일치하면 제작 버튼이 활성화됩니다.', actions: [action('#craft-button', '뉴턴(N)을 제작하세요.', function () { return state().status === 'placing'; })] },
+    { chapter: '1 · 핵심 플레이', title: '배치 위치 선택', body: '강조된 재료 칸 중 하나에 유도단위를 놓습니다. 나머지 재료 블록은 사라집니다.', actions: [action(cell(17), '원래 kg가 있던 칸에 N을 놓으세요.', function () { return state().status === 'animating' || document.querySelector('#modal-root [data-choice="up"]'); })] },
+    { chapter: '1 · 핵심 플레이', title: '능력 발동과 연쇄', body: '만든 유도단위는 즉시 고유 능력을 발동합니다. 뉴턴은 선택한 방향으로 블록을 밀고, 새 조합이 생기면 연쇄 제작이 이어집니다.', actions: [
       action('#modal-root [data-choice="up"]', '↑ 위쪽을 선택하세요.', function () { return !document.querySelector('#modal-root [data-choice="up"]'); }),
       action('#board-wrap', 'N → C 연쇄가 끝날 때까지 지켜보세요.', function () { return state().status === 'playing' && state().craftedUnits.indexOf('C') >= 0 && state().maxChainCount >= 2; }, { wait: true })
     ] },
-    { chapter: '4 · 고급 기능', title: '같은 차원식의 두 단위', body: 's⁻¹은 Hz와 Bq 두 단위가 가능하므로 자동 연쇄에서는 제외됩니다. 직접 s를 분모로 지정하고 제작해 보세요.', onEnter: prepareHz, actions: [
-      action(cell(22), 's 블록을 선택하세요.', function () { return state().selectedCells.length === 1; }),
-      action(chip(1), 's를 한 번 눌러 분자로 보내세요.', function () { return role(1, 'numerator'); }),
-      action(chip(1), 's를 다시 눌러 분모로 보내세요.', function () { return role(1, 'denominator'); }),
-      action('#craft-button', 'Hz / Bq 제작 버튼을 누르세요.', function () { return Boolean(document.querySelector('#modal-root [data-choice="Hz"]')); })
-    ] },
-    { chapter: '4 · 고급 기능', title: 'Hz 또는 Bq 직접 선택', body: '둘 중 하나를 사용자가 직접 고릅니다. Gy·Sv도 같은 이유로 자동 연쇄에서 제외됩니다.', actions: [
-      action('#modal-root [data-choice="Hz"], #modal-root [data-choice="Bq"]', 'Hz 또는 Bq 중 원하는 단위를 고르세요.', function () { return state().status === 'placing'; }),
-      action(cell(22), '선택한 단위를 s가 있던 칸에 놓으세요.', function () { return state().status === 'animating' || state().bonusItems > 0; }),
-      action('#bonus-item-button', '세 번째 서로 다른 단위가 기록될 때까지 지켜보세요.', function () { return state().status === 'playing' && state().bonusItems > 0; }, { wait: true })
-    ] },
-    { chapter: '4 · 고급 기능', title: '능력마다 다른 추가 입력', body: 'N은 방향, V는 두 번째 지점, Ω은 행·열, T는 끌어당길 기본단위를 고릅니다. 능력이 필요한 순간 화면에 선택지가 나타납니다.', target: '#result-preview', info: true },
-    { chapter: '4 · 고급 기능', title: '셔플', body: '제작 가능한 경로가 하나도 없을 때만 셔플이 활성화됩니다. 남은 블록 수는 유지하며, 일반 모드에서는 10초가 차감됩니다.', onEnter: prepareShuffle, actions: [action('#shuffle-button', '활성화된 셔플을 누르세요.', function () { return state().selectedCells.length === 0; })] },
-    { chapter: '4 · 고급 기능', title: '반응 폭탄과 실험 종료', body: '획득한 폭탄은 가장자리를 제외한 중심을 골라 3×3 기본 블록을 제거합니다. 이후 결과 화면의 다시 시작과 난이도 선택도 확인합니다.', onEnter: prepareBomb, actions: [
+    { chapter: '1 · 핵심 플레이', title: '반응 폭탄 시연', body: '서로 다른 유도단위를 모아 얻은 반응 폭탄은 선택한 중심의 3×3 기본 블록을 제거합니다.', onEnter: prepareBomb, actions: [
       action('#bonus-item-button', '반응 폭탄을 누르세요.', function () { return state().status === 'placingItem'; }),
       action(cell(12), '보드 중앙을 폭발 중심으로 고르세요.', function () { return state().status === 'animating' || state().bonusItems === 0; }),
-      action('#board-wrap', '3×3 폭발이 끝날 때까지 지켜보세요.', function () { return state().status === 'playing'; }, { wait: true, afterComplete: showTutorialResult }),
-      action('#modal-root [data-menu]', '결과 화면에서 난이도 선택을 누르면 튜토리얼이 끝납니다.', function () { return state().status === 'menu'; })
-    ] }
+      action('#board-wrap', '3×3 폭발이 끝날 때까지 지켜보세요.', function () { return state().status === 'playing'; }, { wait: true })
+    ] },
+    { chapter: '1 · 핵심 플레이', title: '승리 조건', body: '유도단위의 능력과 반응 폭탄을 활용해 기본 블록을 모두 없애면 승리합니다. 일반 모드에서는 제한 시간이 끝나기 전에 보드를 정리하세요.', target: '.status-cluster', info: true }
   ];
 
   function cache() {
@@ -493,8 +414,8 @@
     if (active || localStorage.getItem('unitBreakerTutorialSeen')) return;
     offering = true; refs.root.classList.remove('is-transitioning'); refs.root.hidden = false; document.body.classList.add('tutorial-active');
     refs.chapter.textContent = 'FIRST EXPERIMENT'; refs.count.textContent = '';
-    refs.title.textContent = '직접 해보는 튜토리얼';
-    refs.body.textContent = '메뉴부터 유도단위 제작, 이동 연쇄, 셔플과 반응 폭탄까지 실제 화면을 조작하며 익힐 수 있습니다.';
+    refs.title.textContent = '핵심 플레이 튜토리얼';
+    refs.body.textContent = '힌트로 조합을 찾고 유도단위를 제작해 능력과 반응 폭탄을 사용하는 핵심 흐름만 익힙니다.';
     refs.task.textContent = '지금 시작할까요?'; refs.task.classList.remove('is-action');
     refs.back.hidden = true; refs.skip.textContent = '나중에'; refs.next.hidden = false; refs.next.textContent = '튜토리얼 시작';
     position();

@@ -78,7 +78,6 @@
         current.remainingTime -= 1;
         UB.UI.updateStatus();
         if (current.remainingTime <= 10 && current.remainingTime > 0) {
-          UB.Audio.play('tick');
           UB.UI.flashCountdown(current.remainingTime);
         }
         if (current.remainingTime === 0) {
@@ -131,14 +130,12 @@
         return;
       }
       if (current.selectedCells.length && !UB.Board.isAdjacent(current.selectedCells[current.selectedCells.length - 1], index, current.boardSize)) {
-        UB.Audio.play('invalid');
         UB.UI.toast('직전에 선택한 블록과 인접한 칸을 선택하세요.');
         return;
       }
       current.selectedCells.push(index);
       current.assignments[block.id] = null;
       current.hintPath = [];
-      UB.Audio.play('select');
       UB.UI.renderBoard();
       UB.UI.renderComposer();
     },
@@ -148,12 +145,11 @@
       if (index === undefined) return;
       const block = this.state.board[index];
       if (block) delete this.state.assignments[block.id];
-      UB.Audio.play('cancel');
       UB.UI.renderBoard();
       UB.UI.renderComposer();
     },
 
-    clearSelection: function (silent) {
+    clearSelection: function () {
       if (this.state.status === 'placing') this.setStatus('playing');
       if (this.state.status === 'placingItem') {
         this.state.itemTargeting = false;
@@ -163,7 +159,6 @@
       this.state.assignments = {};
       this.state.placementCandidates = [];
       this.state.hintPath = [];
-      if (!silent) UB.Audio.play('cancel');
       UB.UI.renderBoard();
       UB.UI.renderComposer();
     },
@@ -172,7 +167,6 @@
       if (this.state.status !== 'playing') return;
       const current = this.state.assignments[blockId];
       this.state.assignments[blockId] = current === null ? 'numerator' : current === 'numerator' ? 'denominator' : null;
-      UB.Audio.play('select');
       UB.UI.renderBoard();
       UB.UI.renderComposer();
     },
@@ -188,7 +182,7 @@
     craftDerivedUnit: async function () {
       if (this.state.status !== 'playing' || this.state.timeExpired) return;
       const matches = UB.UnitSystem.findMatchingUnits(this.getAssignments());
-      if (!matches.length) { UB.Audio.play('invalid'); return; }
+      if (!matches.length) return;
       let unit = matches[0];
       if (matches.length > 1) {
         const symbol = await UB.UI.requestChoice('제작할 유도단위를 선택하세요', matches.map(function (candidate) {
@@ -205,7 +199,6 @@
       this.state.placementCandidates = this.state.selectedCells.slice();
       this.state.pendingUnit = unit;
       this.setStatus('placing');
-      UB.Audio.play('valid');
       UB.UI.renderBoard();
       UB.UI.renderComposer();
       UB.UI.toast(unit.nameKo + '(' + unit.symbol + ')을 놓을 강조 칸을 선택하세요.');
@@ -291,7 +284,7 @@
     useBonusItem: function () {
       const current = this.state;
       if (current.status !== 'playing' || current.bonusItems <= 0 || current.isPaused) return;
-      this.clearSelection(true);
+      this.clearSelection();
       current.itemTargeting = true;
       this.setStatus('placingItem');
       if (!this.isBonusTarget(current.focusedIndex)) {
@@ -332,7 +325,6 @@
       current.lastAffected = area.filter(function (cell) { return current.board[cell] && current.board[cell].type === 'base'; });
       this.setStatus('animating');
       UB.UI.renderAll();
-      UB.Audio.play('ability');
       await UB.UI.playTelegraph(index, { symbol: '✦', kind: 'item', label: '3×3 반응 폭발' }, 1100);
       await UB.Abilities.removeBase(area, 1);
       await UB.Abilities.settle();
@@ -360,7 +352,7 @@
       const after = current.board.filter(Boolean).length;
       if (!force && !current.unlimitedMode) current.remainingTime = Math.max(0, current.remainingTime - 10);
       current.hintPath = [];
-      this.clearSelection(true);
+      this.clearSelection();
       UB.UI.setShuffleAvailable(!UB.Board.findAvailableRecipe(current.board));
       UB.UI.toast('블록 ' + after + '개의 위치를 재배열했습니다.' + (before === after ? '' : ' (수량 검증 필요)'));
       UB.UI.renderAll();
@@ -382,7 +374,6 @@
       if (this.state.status === 'won') return;
       window.clearInterval(timerHandle);
       this.setStatus('won');
-      UB.Audio.play('win');
       UB.UI.showResult(true);
     },
 
@@ -390,7 +381,6 @@
       if (this.state.status === 'lost') return;
       window.clearInterval(timerHandle);
       this.setStatus('lost');
-      UB.Audio.play('lose');
       UB.UI.showResult(false);
     },
 

@@ -664,7 +664,6 @@
     state().chainCount = chainDepth;
     state().maxChainCount = Math.max(state().maxChainCount, chainDepth);
     state().lastAbility = block.unit;
-    if (chainDepth > 1) UB.Audio.play('chain'); else UB.Audio.play('ability');
     UB.UI.showAbilityBanner(block.unit, chainDepth);
     UB.UI.updateStatus();
     await UB.UI.playTelegraph(index, {

@@ -44,7 +44,6 @@ python -m http.server 8080
 - `js/abilities.js`: 유도단위 능력과 연쇄 반응
 - `js/game.js`: 중앙 상태, 타이머, 제작·배치, 승패 흐름
 - `js/ui.js`: 보드·조합기 렌더링, 도감, 튜토리얼, 결과 화면
-- `js/audio.js`: 외부 음원 없는 Web Audio 효과음
 - `js/main.js`: 입력 이벤트, 키보드 조작, 디버그 패널
 - `tests/run-tests.js`: 차원식, 보드, 중력, 셔플 핵심 회귀 테스트
 

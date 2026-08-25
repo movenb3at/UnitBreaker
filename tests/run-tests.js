@@ -234,37 +234,37 @@ test('특수 능력 충전·방향 이동 애니메이션이 실행 흐름에 �
   assert(css.includes('@keyframes pushUp') && css.includes('@keyframes telegraphRing') && css.includes('@keyframes chargeAttract'));
 });
 
-test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 보기를 제공한다', () => {
+test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단계씩 이전 보기를 제공한다', () => {
   const tutorial = fs.readFileSync(path.join(root, 'js/tutorial.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
-  assert((tutorial.match(/chapter: '/g) || []).length === 34);
+  const expectedTitles = ['연습 시작', '힌트로 뉴턴 표시', '연결된 재료 선택', '분자와 분모 지정', '유도단위 제작', '배치 위치 선택', '능력 발동과 연쇄', '반응 폭탄 시연', '승리 조건'];
+  assert((tutorial.match(/chapter: '/g) || []).length === expectedTitles.length);
+  expectedTitles.reduce((previousPosition, title) => {
+    const position = tutorial.indexOf("title: '" + title + "'");
+    assert(position > previousPosition);
+    return position;
+  }, -1);
+  assert(tutorial.includes('actions: selectNewtonActions()'));
+  assert(tutorial.includes('actions: assignActions()'));
+  assert(tutorial.includes("action('#craft-button'"));
+  assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
+  assert(tutorial.includes("action('#hint-button'") && tutorial.includes('run: showNewtonHint'));
+  assert(tutorial.includes('current.hintPath = NEWTON_PATH.slice()') && tutorial.includes("state().hintPath.join(',') === NEWTON_PATH.join(',')"));
+  assert(tutorial.includes('onEnter: prepareBomb') && tutorial.includes("action('#bonus-item-button'") && tutorial.includes('action(cell(12)'));
+  assert(tutorial.includes('기본 블록을 모두 없애면 승리') && tutorial.includes('제한 시간이 끝나기 전에'));
+  ['난이도 선택', '무제한 모드 켜기', '단위 도감', '키보드 조작법', '일시정지', '초기화', '같은 차원식의 두 단위'].forEach((title) => {
+    assert(!tutorial.includes("title: '" + title + "'"));
+  });
+  assert(!tutorial.includes("action('#shuffle-button'"));
+  assert(!tutorial.includes('prepareHz') && !tutorial.includes('prepareShuffle'));
   assert(!tutorial.includes('restartChapter') && !tutorial.includes('CHAPTER_STARTS'));
   assert(tutorial.includes('reviewReturn = { stepIndex: stepIndex, actionIndex: codexOpen ? 0 : actionIndex, restoreModal:'));
   assert(tutorial.includes('stepIndex -= 1; actionIndex = 0; reviewing = true'));
-  assert(tutorial.includes("title: '무제한 모드 켜기'") && tutorial.includes("title: '반응 폭탄'"));
-  assert(tutorial.includes("title: '무제한 상태 유지'") && !tutorial.includes("title: '무제한 모드 끄기'"));
   assert(tutorial.includes("classList.toggle('tutorial-in-game'") && css.includes('.tutorial-in-game .tutorial-coach'));
-  assert((tutorial.match(/codexScrollAction\(\)/g) || []).length === 3);
-  assert(tutorial.includes("document.addEventListener('scroll', handleGuidedScroll, true)"));
-  assert(tutorial.includes("event.target.closest('[data-close]')"));
-  assert(tutorial.includes("refs.coach.classList.add('is-collapsed', 'is-codex-reading')"));
-  assert(tutorial.includes('UB.UI.closeInformationalModal()'));
-  assert(tutorial.includes('codexOpen ? 0 : actionIndex'));
-  assert(tutorial.includes('더 살펴봐도 좋습니다. 준비되면 ×를 눌러'));
-  assert(ui.includes('closeInformationalModal: closeInformationalModal'));
   assert(tutorial.includes("querySelector('#home-button').disabled = true"));
   assert(tutorial.includes("querySelector('#home-button').disabled = false"));
-  assert(css.includes('.tutorial-coach.is-collapsed'));
-  assert(tutorial.includes("classList.contains('is-codex-reading')"));
-  assert(tutorial.includes("setProperty('width', safeWidth + 'px', 'important')"));
-  assert(tutorial.includes('Math.min(centeredLeft, closeSafeLeft)'));
-  assert(css.includes('.tutorial-coach.is-codex-reading'));
-  assert(tutorial.includes("input[name=\"difficulty\"][value=\"easy\"]').closest('label')"));
-  assert(tutorial.includes("action('#hint-button'") && tutorial.includes("action('#shuffle-button'") && tutorial.includes("action('#bonus-item-button'"));
-  assert(tutorial.includes("data-choice=\"Hz\"") && tutorial.includes("data-choice=\"Bq\""));
-  assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
   assert(!tutorial.includes('#debug-panel') && !ui.includes('TUTORIAL_STEPS'));
   assert(tutorial.includes('function measureTargetNeighborhood()'));
   assert(tutorial.includes('previous: measureItem(adjacentItem(-1))') && tutorial.includes('next: measureItem(adjacentItem(1))'));
@@ -280,9 +280,17 @@ test('참여형 튜토리얼은 34단계 실제 조작과 한 단계씩 이전 �
   assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260726-tutorial18"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-gameplaytutorial"'));
   assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
+});
+
+test('효과음 재생 코드와 음향 UI가 제거되어 있다', () => {
+  const files = ['index.html', 'README.md', 'js/abilities.js', 'js/game.js', 'js/main.js', 'js/tutorial.js'];
+  const source = files.map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
+  assert(!fs.existsSync(path.join(root, 'js/audio.js')));
+  assert(!/AudioContext|webkitAudioContext|UB\.Audio|sound-button|음향|효과음/.test(source));
+  assert(!/new\s+Audio\s*\(|\.play\s*\(/.test(source));
 });
 
 test('모바일 유도단위 도감은 한 열과 부가 설명 토글을 사용한다', () => {
