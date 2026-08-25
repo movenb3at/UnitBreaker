@@ -232,9 +232,9 @@ kbd { padding: 2px 4px; border: 1px solid var(--line); border-radius: 3px; color
 .tutorial-guide { position: fixed; z-index: 110; inset: 0; pointer-events: none; }
 .tutorial-guide[hidden] { display: none; }
 .tutorial-guide.is-transitioning::before { content: ''; position: fixed; z-index: 5; inset: 0; pointer-events: auto; }
-.tutorial-guide.is-transitioning .tutorial-shield, .tutorial-guide.is-transitioning .tutorial-spotlight, .tutorial-guide.is-transitioning .tutorial-coach { opacity: 0; }
+.tutorial-guide.is-transitioning .tutorial-shield, .tutorial-guide.is-transitioning .tutorial-spotlight { opacity: 0; }
 .tutorial-guide.is-transitioning .tutorial-spotlight { transition: opacity .12s ease; }
-.tutorial-guide.is-transitioning .tutorial-coach { transform: translateY(4px) scale(.99); pointer-events: none; transition: opacity .12s ease, transform .12s ease; }
+.tutorial-guide.is-transitioning .tutorial-coach { pointer-events: none; }
 .tutorial-shield { position: fixed; z-index: 1; background: rgba(2, 8, 14, .72); backdrop-filter: blur(2px); pointer-events: auto; transition: opacity .12s ease; }
 .tutorial-in-game .tutorial-shield { background: rgba(2, 8, 14, .16); backdrop-filter: none; }
 .tutorial-spotlight { position: fixed; z-index: 2; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 3px rgba(96,230,197,.18), 0 0 28px rgba(96,230,197,.48); pointer-events: none; transition: opacity .16s ease, left .2s ease, top .2s ease, width .2s ease, height .2s ease; animation: tutorialSpotlight 1.35s ease-in-out infinite; }

@@ -318,7 +318,6 @@
     const step = currentStep(); if (!step) { finish(); return; }
     const token = ++transitionToken;
     transitioning = true;
-    refs.root.hidden = false;
     measureTargetNeighborhood();
     refs.root.classList.add('is-transitioning');
     transitionTimer = window.setTimeout(function () { commitRender(entering, token); }, 120);

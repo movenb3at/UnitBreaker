@@ -271,6 +271,8 @@ test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단�
   assert(tutorial.includes("scrollIntoView({ behavior: 'auto'") && !tutorial.includes("scrollIntoView({ behavior: 'smooth'"));
   assert(tutorial.includes("refs.root.classList.add('is-transitioning')") && tutorial.includes("refs.root.classList.remove('is-transitioning')"));
   assert(tutorial.includes('transitionTimer') && tutorial.includes('commitRender(entering, token)'));
+  assert(!css.includes('.tutorial-guide.is-transitioning .tutorial-coach { opacity'), '단계 전환 중 안내 카드가 사라지면 안 된다');
+  assert(css.includes('.tutorial-guide.is-transitioning .tutorial-coach { pointer-events: none; }'));
   assert(!tutorial.includes('syncBackAvailability') && !tutorial.includes('modalObserver'), 'modal back disabling was not rolled back');
   assert(tutorial.includes('restoreModal: modalOpen && !codexOpen'), 'modal restore state missing');
   assert(tutorial.includes('UB.UI.suspendModal()') && tutorial.includes('UB.UI.restoreModal()'), 'tutorial modal suspend/restore wiring missing');
@@ -280,7 +282,8 @@ test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단�
   assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-gameplaytutorial"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-stabletutorial"'));
+  assert(html.includes('href="css/style.css?v=20260825-stabletutorial"'));
   assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
 });
@@ -379,12 +382,30 @@ test('제작 가능한 단위가 없으면 힌트를 차감하지 않고 셔플�
   gameUB.Game.state.remainingTime = 100;
   gameUB.Game.state.unlimitedMode = false;
   gameUB.Game.shuffle(false);
-  assert(gameUB.Game.state.remainingTime === 90);
+  assert(gameUB.Game.state.remainingTime === 100, '가능한 수가 없으면 일반 모드 셔플은 무료여야 한다');
+  assert(gameUB.Game.state.shuffleFree === true && shuffleEnabled === true);
+
   gameUB.Game.state.status = 'playing';
+  gameUB.Game.state.board = Array.from({ length: 100 }, () => gameUB.Board.createBaseBlock('kg'));
+  gameUB.Game.state.board[0] = gameUB.Board.createBaseBlock('s');
+  assert(Boolean(gameUB.Board.findAvailableRecipe(gameUB.Game.state.board)));
+  gameUB.Game.state.remainingTime = 100;
+  gameUB.Game.shuffle(false);
+  assert(gameUB.Game.state.remainingTime === 90, '가능한 수가 있으면 일반 모드 셔플은 10초를 차감해야 한다');
+  assert(gameUB.Game.state.shuffleFree === false && shuffleEnabled === true);
+
+  gameUB.Game.state.status = 'playing';
+  gameUB.Game.state.board = Array.from({ length: 100 }, () => gameUB.Board.createBaseBlock('kg'));
   gameUB.Game.state.remainingTime = 100;
   gameUB.Game.state.unlimitedMode = true;
   gameUB.Game.shuffle(false);
   assert(gameUB.Game.state.remainingTime === 100);
+
+  gameUB.Game.state.status = 'playing';
+  gameUB.Game.state.board[0] = gameUB.Board.createBaseBlock('s');
+  const unlimitedBoardBefore = gameUB.Game.state.board.map((block) => block && block.id).join(',');
+  gameUB.Game.shuffle(false);
+  assert(gameUB.Game.state.board.map((block) => block && block.id).join(',') === unlimitedBoardBefore, '무한 모드의 기존 셔플 제한은 유지해야 한다');
 
   vm.runInContext(fs.readFileSync(path.join(root, 'js/abilities.js'), 'utf8'), harness, { filename: 'js/abilities.js' });
   const chainGroups = gameUB.Abilities.automaticChainGroups();

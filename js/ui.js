@@ -55,7 +55,7 @@
     refs.bonusProgress.textContent = distinctCrafts + ' / ' + state.nextBonusThreshold;
     refs.bonusItemButton.disabled = state.bonusItems <= 0 || state.status !== 'playing';
     refs.bonusItemButton.title = '현재 목록 ' + (state.bonusUnitTypes.length ? state.bonusUnitTypes.join(', ') : '비어 있음') + ' · 다음 폭탄 ' + state.nextBonusThreshold + '종';
-    refs.shuffleCost.textContent = state.unlimitedMode ? '무료' : '−10s';
+    refs.shuffleCost.textContent = state.unlimitedMode || state.shuffleFree ? '무료' : '−10s';
   }
 
   function blockLabel(block, index) {

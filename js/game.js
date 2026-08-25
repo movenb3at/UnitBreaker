@@ -15,7 +15,7 @@
       pushMotion: [], pushDirection: null, rotationMotion: [], gravityMovements: [], attractMovements: [],
       bonusItems: 0, bonusMilestone: 0, bonusUnitTypes: [], nextBonusThreshold: UB.bonusItemThreshold(1), itemTargeting: false,
       gravityPulse: 0, abilityPulse: 0, lastAbility: null, focusedIndex: 90,
-      startedAt: null, initialSeconds: 480, tutorialMode: false
+      startedAt: null, initialSeconds: 480, tutorialMode: false, shuffleFree: false
     };
   }
 
@@ -43,6 +43,7 @@
       this.state.board = UB.Board.generateBoard(config.boardSize);
       this.state.startedAt = Date.now();
       this.setStatus('playing');
+      this.syncShuffleState(UB.Board.findAvailableRecipe(this.state.board));
       UB.UI.showGame();
       UB.UI.renderAll();
       this.startTimer();
@@ -231,7 +232,7 @@
       } else {
         this.setStatus('playing');
         const available = UB.Board.findAvailableRecipe(current.board);
-        UB.UI.setShuffleAvailable(!available);
+        this.syncShuffleState(available);
         UB.UI.renderAll();
       }
     },
@@ -240,9 +241,9 @@
       const current = this.state;
       if (current.status !== 'playing' || current.hintsRemaining <= 0) return;
       const hint = UB.Board.findAvailableRecipe(current.board);
+      this.syncShuffleState(hint);
       if (!hint) {
         UB.UI.toast('제작 가능한 유도단위가 없어 힌트를 차감하지 않았습니다. 셔플로 배열을 바꿔 보세요.');
-        UB.UI.setShuffleAvailable(true);
       } else {
         current.hintsRemaining -= 1;
         current.hintPath = hint.path;
@@ -335,25 +336,34 @@
         this.lose();
       } else {
         this.setStatus('playing');
-        UB.UI.setShuffleAvailable(!UB.Board.findAvailableRecipe(current.board));
+        this.syncShuffleState(UB.Board.findAvailableRecipe(current.board));
         UB.UI.renderAll();
       }
+    },
+
+    syncShuffleState: function (availableRecipe) {
+      const current = this.state;
+      const available = Boolean(availableRecipe);
+      current.shuffleFree = !available;
+      UB.UI.setShuffleAvailable(current.unlimitedMode ? !available : true);
+      return available;
     },
 
     shuffle: function (force) {
       const current = this.state;
       if (current.status !== 'playing' && !force) return;
-      if (!force && UB.Board.findAvailableRecipe(current.board)) return;
+      const availableBeforeShuffle = Boolean(UB.Board.findAvailableRecipe(current.board));
+      if (!force && current.unlimitedMode && availableBeforeShuffle) return;
       const before = current.board.filter(Boolean).length;
       for (let attempt = 0; attempt < 30; attempt += 1) {
         UB.Board.shuffleRemaining(current.board);
         if (UB.Board.findAvailableRecipe(current.board)) break;
       }
       const after = current.board.filter(Boolean).length;
-      if (!force && !current.unlimitedMode) current.remainingTime = Math.max(0, current.remainingTime - 10);
+      if (!force && !current.unlimitedMode && availableBeforeShuffle) current.remainingTime = Math.max(0, current.remainingTime - 10);
       current.hintPath = [];
       this.clearSelection();
-      UB.UI.setShuffleAvailable(!UB.Board.findAvailableRecipe(current.board));
+      this.syncShuffleState(UB.Board.findAvailableRecipe(current.board));
       UB.UI.toast('블록 ' + after + '개의 위치를 재배열했습니다.' + (before === after ? '' : ' (수량 검증 필요)'));
       UB.UI.renderAll();
       if (!current.unlimitedMode && current.remainingTime === 0) { current.timeExpired = true; this.finalizeTimedOut(); }
