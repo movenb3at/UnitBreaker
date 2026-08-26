@@ -282,10 +282,17 @@ test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단�
   assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-stabletutorial"'));
-  assert(html.includes('href="css/style.css?v=20260825-stabletutorial"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-tutorialexit1"'));
+  assert(html.includes('href="css/style.css?v=20260825-tutorialexit1"'));
   assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));
+  assert(html.includes('id="tutorial-exit-confirmation"') && html.includes('튜토리얼을 종료하시겠습니까?'));
+  assert(html.includes('data-tutorial-exit-control="confirm" disabled>튜토리얼 종료</button>'));
+  assert(tutorial.includes("refs.skip.addEventListener('click', openExitConfirmation)") && !tutorial.includes("refs.skip.addEventListener('click', finish)"));
+  assert(tutorial.includes('exitUnlockTimer = window.setTimeout(function ()') && tutorial.includes('}, 1000);'));
+  assert(tutorial.includes('refs.exitConfirm.disabled = true') && tutorial.includes('refs.exitConfirm.disabled = false'));
+  assert(css.includes('.tutorial-exit-confirmation { position: fixed;') && css.includes('.tutorial-exit-actions .danger-button'));
+  assert(css.includes('background: var(--danger)') && css.includes('.tutorial-exit-confirmation[hidden] { display: none; }'));
 });
 
 test('효과음 재생 코드와 음향 UI가 제거되어 있다', () => {
@@ -315,6 +322,21 @@ test('게임 로고의 메뉴 이동과 모바일 세로 레이아웃이 연결�
   assert(css.includes('@media (max-width: 980px)'));
   assert(css.includes('grid-template-columns: minmax(0, 1fr);'));
   assert(css.includes('.board-wrap { width: 100%; min-width: 0;'));
+});
+
+test('게임과 튜토리얼은 전용 URL을 사용하고 브라우저 뒤로 가기로 메뉴에 복귀한다', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+  const game = fs.readFileSync(path.join(root, 'js/game.js'), 'utf8');
+  const tutorial = fs.readFileSync(path.join(root, 'js/tutorial.js'), 'utf8');
+  assert(main.includes("match(/\\/(game|tutorial)\\/?$/)"));
+  assert(main.includes("writeHistory('pushState', route, true)"));
+  assert(main.includes("window.addEventListener('popstate'"));
+  assert(main.includes("UB.Tutorial.finish({ preserveHistory: true })"));
+  assert(main.includes("UB.Game.backToMenu({ preserveHistory: true })"));
+  assert(game.includes("UB.Navigation.enter('game')") && game.includes('UB.Navigation.leave()'));
+  assert(tutorial.includes("UB.Navigation.enter('tutorial')") && tutorial.includes("UB.Game.backToMenu({ preserveHistory: true })"));
+  assert(html.includes('src="js/main.js?v=20260827-routing1"'));
 });
 
 test('제작 가능한 단위가 없으면 힌트를 차감하지 않고 셔플을 활성화한다', () => {

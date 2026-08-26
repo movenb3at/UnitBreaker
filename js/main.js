@@ -1,6 +1,92 @@
 (function (UB) {
   'use strict';
 
+  const ROUTE_STATE = 'unitBreakerRoute';
+  let mainPath = null;
+  let navigationStarted = false;
+
+  function routeFromPath(pathname) {
+    const match = String(pathname || '').match(/\/(game|tutorial)\/?$/);
+    return match ? match[1] : 'menu';
+  }
+
+  function resolveMainPath() {
+    const savedState = window.history.state;
+    if (savedState && savedState[ROUTE_STATE] && savedState.unitBreakerMainPath) return savedState.unitBreakerMainPath;
+    const pathname = window.location.pathname || '/';
+    if (routeFromPath(pathname) === 'menu') return pathname;
+    return pathname.replace(/\/(game|tutorial)\/?$/, '/') || '/';
+  }
+
+  function routeUrl(route) {
+    const root = mainPath === '/' ? '' : mainPath.replace(/\/$/, '');
+    const pathname = route === 'menu' ? mainPath : root + '/' + route;
+    return pathname + window.location.search + window.location.hash;
+  }
+
+  function routeState(route, pushed) {
+    const current = window.history.state;
+    const next = current && typeof current === 'object' ? Object.assign({}, current) : {};
+    next[ROUTE_STATE] = route;
+    next.unitBreakerMainPath = mainPath;
+    next.unitBreakerPushed = Boolean(pushed);
+    return next;
+  }
+
+  function writeHistory(method, route, pushed) {
+    try {
+      window.history[method](routeState(route, pushed), '', routeUrl(route));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function enterRoute(route) {
+    if (route !== 'game' && route !== 'tutorial') return;
+    if (!mainPath) mainPath = resolveMainPath();
+    if (routeFromPath(window.location.pathname) === route) return;
+    writeHistory('pushState', route, true);
+  }
+
+  function leaveRoute() {
+    if (!mainPath) mainPath = resolveMainPath();
+    if (routeFromPath(window.location.pathname) === 'menu') return;
+    const current = window.history.state;
+    if (current && current[ROUTE_STATE] && current.unitBreakerMainPath === mainPath && current.unitBreakerPushed) {
+      window.history.back();
+      return;
+    }
+    writeHistory('replaceState', 'menu', false);
+  }
+
+  function applyRoute(route) {
+    if (route === 'tutorial') {
+      UB.Tutorial.start();
+      return;
+    }
+    if (route === 'game') {
+      UB.Game.initialize(selectedDifficulty(), document.querySelector('#unlimited-mode').checked);
+      return;
+    }
+    if (document.body.classList.contains('tutorial-active')) UB.Tutorial.finish({ preserveHistory: true });
+    else UB.Game.backToMenu({ preserveHistory: true });
+  }
+
+  function startNavigation() {
+    if (navigationStarted) return;
+    navigationStarted = true;
+    mainPath = resolveMainPath();
+    const route = routeFromPath(window.location.pathname);
+    const current = window.history.state;
+    const pushed = Boolean(current && current[ROUTE_STATE] === route && current.unitBreakerMainPath === mainPath && current.unitBreakerPushed);
+    writeHistory('replaceState', route, pushed);
+    window.addEventListener('popstate', function () { applyRoute(routeFromPath(window.location.pathname)); });
+    if (route !== 'menu') applyRoute(route);
+  }
+
+  UB.Navigation = { current: function () { return routeFromPath(window.location.pathname); }, enter: enterRoute, leave: leaveRoute, start: startNavigation };
+
   function selectedDifficulty() {
     const checked = document.querySelector('input[name="difficulty"]:checked');
     return checked ? checked.value : 'normal';
@@ -112,7 +198,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    UB.UI.cache(); bindEvents(); setupDebug(); UB.UI.showMenu();
-    if (!localStorage.getItem('unitBreakerTutorialSeen')) window.setTimeout(function () { UB.Tutorial.offer(); }, 450);
+    UB.UI.cache(); bindEvents(); setupDebug(); UB.UI.showMenu(); UB.Navigation.start();
+    if (UB.Navigation.current() === 'menu' && !localStorage.getItem('unitBreakerTutorialSeen')) window.setTimeout(function () { UB.Tutorial.offer(); }, 450);
   });
 })(window.UnitBreaker = window.UnitBreaker || {});

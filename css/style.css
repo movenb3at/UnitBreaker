@@ -258,6 +258,19 @@ kbd { padding: 2px 4px; border: 1px solid var(--line); border-radius: 3px; color
 .tutorial-coach.is-collapsed .tutorial-coach-actions button { min-height: 32px; padding: 5px 8px; }
 .tutorial-coach.is-collapsed .tutorial-coach-actions .primary-button[hidden] { display: none; }
 .tutorial-coach.is-codex-reading { width: min(330px, calc(100vw - 24px)) !important; }
+.tutorial-exit-confirmation { position: fixed; z-index: 8; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: auto; }
+.tutorial-exit-confirmation[hidden] { display: none; }
+.tutorial-exit-backdrop { position: absolute; inset: 0; background: rgba(2,8,14,.82); backdrop-filter: blur(8px); }
+.tutorial-exit-card { position: relative; width: min(430px, 100%); padding: 28px; border: 1px solid var(--line-strong); border-radius: 18px; background: linear-gradient(145deg, #102434, #081620); box-shadow: 0 32px 90px rgba(0,0,0,.58); text-align: center; animation: modalIn .2s ease; }
+.tutorial-exit-card .eyebrow { margin: 0 0 8px; color: var(--danger); }
+.tutorial-exit-card h2 { margin: 0 0 10px; font-size: 1.45rem; word-break: keep-all; }
+.tutorial-exit-card > p:not(.eyebrow) { margin: 0; color: #91a7b2; font-size: .78rem; line-height: 1.6; word-break: keep-all; }
+.tutorial-exit-card .tutorial-exit-status { min-height: 1.4em; margin-top: 12px; color: #718995; font-size: .66rem; }
+.tutorial-exit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 22px; }
+.tutorial-exit-actions button { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: #102430; color: #c1d1d7; font-weight: 700; cursor: pointer; }
+.tutorial-exit-actions .danger-button { border-color: var(--danger); background: var(--danger); color: #27070b; font-weight: 800; transition: transform .16s ease, filter .16s ease, opacity .16s ease; }
+.tutorial-exit-actions .danger-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
+.tutorial-exit-actions button:disabled { cursor: not-allowed; opacity: .36; }
 .tutorial-active #debug-panel { visibility: hidden; }
 
 @keyframes timerPulse { 50% { transform: scale(1.1); text-shadow: 0 0 12px rgba(255,107,120,.5); } }

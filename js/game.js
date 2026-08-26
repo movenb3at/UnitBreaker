@@ -29,6 +29,7 @@
     },
 
     initialize: function (difficulty, unlimitedMode) {
+      if (UB.Navigation) UB.Navigation.enter('game');
       window.clearInterval(timerHandle);
       this.state = blankState();
       this.state.difficulty = difficulty || 'normal';
@@ -394,11 +395,12 @@
       UB.UI.showResult(false);
     },
 
-    backToMenu: function () {
+    backToMenu: function (options) {
       window.clearInterval(timerHandle);
       this.state = blankState();
       UB.UI.closeModal();
       UB.UI.showMenu();
+      if (!(options && options.preserveHistory) && UB.Navigation) UB.Navigation.leave();
     },
 
     restart: function () { this.initialize(this.state.difficulty, this.state.unlimitedMode); }

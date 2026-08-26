@@ -17,6 +17,8 @@
   let reviewReturn = null;
   let codexCollapsed = false;
   let codexReadComplete = false;
+  let exitConfirmOpen = false;
+  let exitUnlockTimer = null;
   let targetNeighborhood = { previous: null, current: null, next: null };
   let refs = {};
 
@@ -117,6 +119,10 @@
     refs.back = refs.root.querySelector('[data-tutorial-control="back"]');
     refs.skip = refs.root.querySelector('[data-tutorial-control="skip"]');
     refs.next = refs.root.querySelector('[data-tutorial-control="next"]');
+    refs.exitConfirmation = refs.root.querySelector('#tutorial-exit-confirmation');
+    refs.exitCancel = refs.root.querySelector('[data-tutorial-exit-control="cancel"]');
+    refs.exitConfirm = refs.root.querySelector('[data-tutorial-exit-control="confirm"]');
+    refs.exitStatus = refs.root.querySelector('#tutorial-exit-status');
     refs.shields = Array.from(refs.root.querySelectorAll('[data-tutorial-shield]'));
   }
 
@@ -304,7 +310,7 @@
       transitioning = false;
       if (current && current.wait) {
         waitTimer = window.setInterval(function () {
-          if (!active || transitioning) return;
+          if (!active || transitioning || exitConfirmOpen) return;
           if (current.after()) completeAction(current);
         }, 180);
       }
@@ -336,6 +342,10 @@
 
   function handleGuidedClick(event) {
     if (!active) return;
+    if (exitConfirmOpen) {
+      if (event.target.closest('[data-tutorial-exit-control]')) return;
+      event.preventDefault(); event.stopPropagation(); return;
+    }
     if (transitioning) { event.preventDefault(); event.stopPropagation(); return; }
     if (event.target.closest('[data-tutorial-control]')) return;
     const current = currentAction();
@@ -366,7 +376,7 @@
   }
 
   function handleGuidedScroll(event) {
-    if (!active || transitioning) return;
+    if (!active || transitioning || exitConfirmOpen) return;
     const current = currentAction();
     if (!current || !current.scroll) return;
     const target = resolveTarget();
@@ -383,7 +393,48 @@
     }
   }
 
-  function finish() {
+  function closeExitConfirmation(restoreFocus) {
+    window.clearTimeout(exitUnlockTimer); exitUnlockTimer = null;
+    exitConfirmOpen = false;
+    refs.exitConfirmation.hidden = true;
+    refs.exitConfirm.disabled = true;
+    refs.exitStatus.textContent = '종료 버튼은 1초 후 활성화됩니다.';
+    if (restoreFocus && (active || offering)) refs.skip.focus();
+  }
+
+  function openExitConfirmation() {
+    if ((!active && !offering) || exitConfirmOpen || transitioning) return;
+    window.clearTimeout(exitUnlockTimer);
+    exitConfirmOpen = true;
+    refs.exitConfirmation.hidden = false;
+    refs.exitConfirm.disabled = true;
+    refs.exitStatus.textContent = '종료 버튼은 1초 후 활성화됩니다.';
+    refs.exitCancel.focus();
+    exitUnlockTimer = window.setTimeout(function () {
+      exitUnlockTimer = null;
+      if (!exitConfirmOpen || (!active && !offering)) return;
+      refs.exitConfirm.disabled = false;
+      refs.exitStatus.textContent = '이제 튜토리얼을 종료할 수 있습니다.';
+    }, 1000);
+  }
+
+  function handleExitKeydown(event) {
+    if (!exitConfirmOpen) return;
+    if (event.key === 'Escape') {
+      event.preventDefault(); event.stopPropagation(); closeExitConfirmation(true); return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = [refs.exitCancel, refs.exitConfirm].filter(function (button) { return !button.disabled; });
+    const currentIndex = focusable.indexOf(document.activeElement);
+    if (!focusable.length) return;
+    if (currentIndex < 0 || (!event.shiftKey && currentIndex === focusable.length - 1) || (event.shiftKey && currentIndex === 0)) {
+      event.preventDefault();
+      focusable[event.shiftKey ? focusable.length - 1 : 0].focus();
+    }
+  }
+
+  function finish(options) {
+    closeExitConfirmation(false);
     active = false; offering = false;
     reviewing = false; reviewReturn = null; codexCollapsed = false; codexReadComplete = false;
     transitioning = false; transitionToken += 1;
@@ -395,14 +446,17 @@
     document.body.classList.remove('tutorial-in-game');
     document.querySelector('#home-button').disabled = false;
     UB.UI.closeModal();
-    if (state().tutorialMode || state().status !== 'menu') UB.Game.backToMenu();
+    if (state().tutorialMode || state().status !== 'menu') UB.Game.backToMenu(options);
+    else if (!(options && options.preserveHistory) && UB.Navigation) UB.Navigation.leave();
   }
 
   function start() {
     if (!refs.root) cache();
+    if (UB.Navigation) UB.Navigation.enter('tutorial');
+    closeExitConfirmation(false);
     offering = false; active = true; stepIndex = 0; actionIndex = 0;
     reviewing = false; reviewReturn = null; codexCollapsed = false; codexReadComplete = false; transitioning = false;
-    UB.UI.closeModal(); UB.Game.backToMenu(); UB.UI.showMenu();
+    UB.UI.closeModal(); UB.Game.backToMenu({ preserveHistory: true }); UB.UI.showMenu();
     document.body.classList.add('tutorial-active'); document.body.classList.remove('tutorial-in-game');
     document.querySelector('#home-button').disabled = true;
     render(true);
@@ -411,6 +465,7 @@
   function offer() {
     if (!refs.root) cache();
     if (active || localStorage.getItem('unitBreakerTutorialSeen')) return;
+    closeExitConfirmation(false);
     offering = true; refs.root.classList.remove('is-transitioning'); refs.root.hidden = false; document.body.classList.add('tutorial-active');
     refs.chapter.textContent = 'FIRST EXPERIMENT'; refs.count.textContent = '';
     refs.title.textContent = '핵심 플레이 튜토리얼';
@@ -438,7 +493,12 @@
       }
       if (currentStep().info) { stepIndex += 1; actionIndex = 0; render(true); }
     });
-    refs.skip.addEventListener('click', finish);
+    refs.skip.addEventListener('click', openExitConfirmation);
+    refs.exitCancel.addEventListener('click', function () { closeExitConfirmation(true); });
+    refs.exitConfirm.addEventListener('click', function () {
+      if (refs.exitConfirm.disabled) return;
+      closeExitConfirmation(false); finish();
+    });
     refs.back.addEventListener('click', function () {
       if (!active || transitioning || stepIndex <= 0) return;
       const modalRoot = document.querySelector('#modal-root');
@@ -453,6 +513,7 @@
     });
     refs.shields.forEach(function (shield) { shield.addEventListener('click', pulse); });
     document.addEventListener('click', handleGuidedClick, true);
+    document.addEventListener('keydown', handleExitKeydown, true);
     document.addEventListener('scroll', handleGuidedScroll, true);
     if (!resizeBound) { window.addEventListener('resize', position); window.addEventListener('scroll', position, true); resizeBound = true; }
   }
