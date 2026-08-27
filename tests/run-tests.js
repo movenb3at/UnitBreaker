@@ -248,6 +248,8 @@ test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단�
   }, -1);
   assert(tutorial.includes('actions: selectNewtonActions()'));
   assert(tutorial.includes('actions: assignActions()'));
+  assert(tutorial.includes("title: '연습 시작'") && tutorial.includes("target: '#board-wrap', info: true, onEnter: prepareNewton"));
+  assert(!tutorial.includes("action('#start-button'"), '연습 시작 단계가 실험 시작 클릭과 동시에 완료되면 안 된다');
   assert(tutorial.includes("action('#craft-button'"));
   assert(tutorial.includes("data-choice=\"up\"") && tutorial.includes("craftedUnits.indexOf('C')"));
   assert(tutorial.includes("action('#hint-button'") && tutorial.includes('run: showNewtonHint'));
@@ -282,7 +284,7 @@ test('핵심 플레이 튜토리얼은 9단계 제작·폭탄 흐름과 한 단�
   assert(tutorial.includes("else if (state().tutorialMode && state().status !== 'menu') UB.UI.showGame()"));
   assert(css.includes('.tutorial-guide.is-transitioning .tutorial-spotlight'));
   assert(css.includes('transition: opacity .16s ease, transform .16s ease'));
-  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260825-tutorialexit1"'));
+  assert(html.includes('id="tutorial-guide"') && html.includes('src="js/tutorial.js?v=20260827-step1"'));
   assert(html.includes('href="css/style.css?v=20260825-tutorialexit1"'));
   assert(html.includes('src="js/board.js?v=20260722-hint2"'));
   assert(css.includes('.tutorial-spotlight') && css.includes('.tutorial-coach'));

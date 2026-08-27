@@ -89,7 +89,7 @@
   }
 
   const steps = [
-    { chapter: '1 · 핵심 플레이', title: '연습 시작', body: '시간이 멈춘 5×5 연습 보드에서 유도단위 하나를 직접 만들어 봅니다.', actions: [action('#start-button', '실험 시작을 누르세요.', function () { return state().tutorialMode && state().status === 'playing'; }, { intercept: true, run: prepareNewton })] },
+    { chapter: '1 · 핵심 플레이', title: '연습 시작', body: '시간이 멈춘 5×5 연습 보드에서 유도단위 하나를 직접 만들어 봅니다.', target: '#board-wrap', info: true, onEnter: prepareNewton },
     { chapter: '1 · 핵심 플레이', title: '힌트로 뉴턴 표시', body: '힌트는 현재 보드에서 실제로 제작 가능한 연결 경로를 강조합니다. 먼저 뉴턴(N)의 재료 경로를 확인하세요.', actions: [action('#hint-button', '힌트를 눌러 뉴턴 경로를 표시하세요.', function () { return state().hintsRemaining === 6 && state().hintPath.join(',') === NEWTON_PATH.join(','); }, { intercept: true, run: showNewtonHint })] },
     { chapter: '1 · 핵심 플레이', title: '연결된 재료 선택', body: '필요한 기본단위 블록을 상하좌우 또는 대각선으로 이어 선택합니다. 뉴턴(N)을 만들 kg·m·s·s를 순서대로 고르세요.', actions: selectNewtonActions() },
     { chapter: '1 · 핵심 플레이', title: '분자와 분모 지정', body: '선택한 재료를 눌러 분자 또는 분모에 배치합니다. kg·m은 분자, s 두 개는 분모로 지정해 kg·m/s²를 만드세요.', actions: assignActions() },
